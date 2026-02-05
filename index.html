@@ -332,4 +332,90 @@ function drawGame() {
     // Player
     ctx.save();
     ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
-    ctx
+    ctx.rotate(player.velocityY * 0.03); // Rotate slightly on jump/fall
+    ctx.filter = `drop-shadow(0 0 10px ${player.isInvincible ? var(--cyan) : gameState.selectedSkin.color})`; // Invincibility glow
+    ctx.drawImage(assets.cat, -player.width / 2, -player.height / 2, player.width, player.height);
+    ctx.restore();
+    ctx.filter = 'none';
+
+    // Obstacles
+    obstacles.forEach((obj, index) => {
+        obj.x -= obj.speed;
+        ctx.drawImage(assets.monster, obj.x, obj.y, obj.width, obj.height);
+        if (checkCollision(player, obj)) {
+            if (!player.isInvincible) {
+                takeHit();
+            }
+            obstacles.splice(index, 1);
+        }
+        if (obj.x + obj.width < 0) obstacles.splice(index, 1);
+    });
+
+    // Collectibles
+    collectibles.forEach((obj, index) => {
+        obj.x -= 4; // Collectibles move slower
+        let img = assets.coin;
+        if (obj.type === 'life') img = assets.life;
+        else if (obj.type === 'jackpot') img = assets.jackpot;
+        
+        ctx.drawImage(img, obj.x, obj.y, obj.width, obj.height);
+
+        if (checkCollision(player, obj)) {
+            playSound('collect');
+            if (obj.type === 'coin') {
+                gameState.score += 10;
+            } else if (obj.type === 'life') {
+                if (gameState.lives < 3) gameState.lives++;
+            } else if (obj.type === 'jackpot') {
+                gameState.jackpotTickets++;
+            }
+            collectibles.splice(index, 1);
+        }
+        if (obj.x + obj.width < 0) collectibles.splice(index, 1);
+    });
+}
+
+function checkCollision(obj1, obj2) {
+    return obj1.x < obj2.x + obj2.width &&
+           obj1.x + obj1.width > obj2.x &&
+           obj1.y < obj2.y + obj2.height &&
+           obj1.y + obj1.height > obj2.y;
+}
+
+function takeHit() {
+    if (gameState.selectedSkin.power === 'Shield' && !player.isInvincible) {
+        player.isInvincible = true;
+        player.invincibilityTimer = 120; // 2 seconds of invincibility
+        playSound('hit');
+        return;
+    }
+    
+    gameState.lives--;
+    playSound('hit');
+    if (gameState.lives <= 0) {
+        endGame();
+    }
+}
+
+// Input Handling
+function playerJump() {
+    if (gameState.running) {
+        player.velocityY = player.jumpForce;
+        playSound('jump');
+    }
+}
+window.addEventListener('mousedown', playerJump);
+window.addEventListener('touchstart', (e) => { e.preventDefault(); playerJump(); });
+
+// Load all assets before showing the menu
+Promise.all(Object.values(assets.sfx).map(sfx => new Promise(resolve => sfx.oncanplaythrough = resolve)))
+    .then(() => Promise.all(Object.values(assets).filter(a => a instanceof Image).map(img => new Promise(resolve => img.onload = resolve))))
+    .then(() => {
+        document.getElementById('main-menu').style.opacity = 1;
+        document.getElementById('start-game-btn').removeAttribute('disabled'); // Enable button after loading
+    })
+    .catch(error => console.error("Error loading assets:", error));
+
+</script>
+</body>
+</html>
