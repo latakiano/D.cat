@@ -2,420 +2,171 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Himalaya Genesis: The Infinite Gauntlet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Himalaya: The Royal Nightmare</title>
     <style>
-        :root { --main-bg: #0a0a1a; --gold: #FFD700; --cyan: #00f2ff; --red: #ff3131; --purple: #8A2BE2; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--main-bg); font-family: 'Segoe UI', sans-serif; user-select: none; }
+        :root { --gold: #FFD700; --blood: #880000; --ghost: #e0e0e0; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #050000; font-family: 'Amiri', serif; }
 
-        /* الشاشة الرئيسية - Menu */
-        #main-menu { position: fixed; inset: 0; background: var(--main-bg); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: opacity 0.5s; }
-        .menu-panel { background: linear-gradient(145deg, #1f1f3a, #0a0a1a); border: 3px solid var(--gold); border-radius: 25px; padding: 30px; text-align: center; width: 95%; max-width: 550px; box-shadow: 0 0 50px rgba(0,0,0,0.7); }
+        /* واجهة المتجر والرهانات */
+        #ui-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(15px); }
+        .royal-panel { background: linear-gradient(135deg, #1a0000, #000); border: 2px solid var(--gold); border-radius: 20px; padding: 25px; width: 90%; max-width: 500px; text-align: center; color: var(--ghost); box-shadow: 0 0 50px var(--blood); }
         
-        .title-text { color: var(--gold); font-size: 3.5vh; margin-bottom: 15px; text-shadow: 0 0 10px var(--gold); }
-        .sub-title-text { color: #ccc; font-size: 1.8vh; margin-bottom: 25px; }
-
-        .game-info { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #333; }
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1.6vh; color: #eee; }
-        .info-row span:last-child { color: var(--cyan); font-weight: bold; }
-        .jackpot-text { color: var(--purple); font-weight: bold; font-size: 2vh; text-shadow: 0 0 8px var(--purple); }
-
-        .player-customization { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; }
-        .skin-option { width: 5.5vh; height: 5.5vh; border-radius: 50%; border: 2px solid #555; cursor: pointer; transition: 0.2s; position: relative; }
-        .skin-option.active { border-color: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
-        .skin-option::after { content: '✨'; position: absolute; top: -5px; right: -5px; font-size: 1.5vh; display: none; }
-        .skin-option.active::after { display: block; }
+        .market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .cat-card { background: #111; border: 1px solid #333; padding: 10px; border-radius: 15px; cursor: pointer; transition: 0.3s; }
+        .cat-card:hover { border-color: var(--gold); transform: translateY(-5px); }
+        .cat-card img { width: 50px; height: 50px; }
         
-        .action-button { background: linear-gradient(45deg, var(--gold), #ffb700); color: #000; padding: 2vh 5vh; border-radius: 50px; border: none; font-size: 2.5vh; font-weight: bold; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 0 25px rgba(255,215,0,0.5); }
-        .action-button:active { transform: scale(0.95); box-shadow: 0 0 10px rgba(255,215,0,0.7); }
-
-        /* HUD - أثناء اللعب */
-        #game-hud { position: fixed; top: 0; width: 100%; padding: 1.5vh 2vh; z-index: 1000; display: flex; justify-content: space-between; align-items: center; color: #fff; text-shadow: 1px 1px #000; }
-        #game-hud div { font-size: 2vh; font-weight: bold; }
-        #lives-display span { color: var(--red); margin-left: 0.5vh; }
+        .bet-box { background: var(--blood); color: #fff; padding: 10px; border-radius: 10px; margin: 15px 0; font-weight: bold; }
         
-        #progress-container { position: fixed; bottom: 1.5vh; left: 50%; transform: translateX(-50%); width: 80%; max-width: 600px; height: 1.2vh; background: rgba(255,255,255,0.1); border-radius: 1vh; overflow: hidden; border: 1px solid rgba(255,215,0,0.4); box-shadow: 0 0 10px rgba(255,215,0,0.2); }
-        #progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--gold)); transition: width 0.1s linear; }
+        .btn-entry { background: var(--gold); color: #000; width: 100%; padding: 15px; border-radius: 50px; border: none; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 0 20px rgba(255,215,0,0.3); }
 
-        /* شاشة النهاية */
-        #end-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2500; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.5s; }
-        .end-panel { background: linear-gradient(135deg, #1a0a20, #000); border: 3px solid var(--purple); border-radius: 20px; padding: 30px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 40px rgba(138,43,226,0.5); }
-        .end-title { color: var(--purple); font-size: 3vh; margin-bottom: 15px; text-shadow: 0 0 8px var(--purple); }
-        .end-stat { font-size: 1.8vh; color: #eee; margin-bottom: 8px; }
-        .btn-restart { background: var(--purple); color: white; padding: 1.5vh 4vh; border-radius: 4vh; border: none; font-size: 2vh; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        /* HUD - أثناء الرعب */
+        #hud { position: fixed; top: 10px; width: 100%; padding: 0 20px; z-index: 1000; display: flex; justify-content: space-between; color: var(--gold); font-size: 18px; pointer-events: none; }
+        .heart-bar { color: #ff0000; font-size: 25px; filter: drop-shadow(0 0 5px #ff0000); }
 
-        canvas { display: block; }
+        canvas { display: block; filter: contrast(1.2) brightness(0.8); }
     </style>
 </head>
 <body>
 
-<div id="main-menu">
-    <div class="menu-panel">
-        <h1 class="title-text">ملحمة جينيسيس: دهليز اللانهاية</h1>
-        <p class="sub-title-text">اجتز الكهوف القديمة، اهزم الوحوش، واحصد الأرباح!</p>
+<div id="hud">
+    <div id="lives-container" class="heart-bar">❤️❤️❤️</div>
+    <div>💰 كوينز: <span id="coin-val">500</span></div>
+</div>
+
+<div id="ui-overlay">
+    <div class="royal-panel">
+        <h1 style="color:var(--gold); margin:0;">قصر الهيمالايا المسكون</h1>
+        <p style="font-size:14px; color:#888;">ادفع 10 كوينز لتدخل المرحلة وتنافس على 100 كوينز!</p>
         
-        <div class="game-info">
-            <div class="info-row"><span>أفضل نتيجة شخصية:</span> <span id="high-score">0</span></div>
-            <div class="info-row"><span>رصيدك الحالي:</span> <span>$<span id="player-balance">0</span></span></div>
-            <div class="info-row"><span class="jackpot-text">الجائزة الكبرى اليومية:</span> <span class="jackpot-text">$<span id="daily-jackpot">100</span></span></div>
+        <div class="bet-box">المتصدر الحالي: صقر العرب (15,400 نقطة)</div>
+
+        <div class="market-grid">
+            <div class="cat-card" onclick="selectCat('ghost', 0)">
+                <img src="https://cdn-icons-png.flaticon.com/512/1864/1864514.png">
+                <p>قط الشبح<br><small>مجاني</small></p>
+            </div>
+            <div class="cat-card" onclick="selectCat('royal', 50)">
+                <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png">
+                <p>الملك الذهبي<br><small>50 كوينز</small></p>
+            </div>
         </div>
 
-        <p style="color:#aaa; font-size:1.6vh; margin-bottom:10px;">اختر مظهر قطتك:</p>
-        <div class="player-customization">
-            <div class="skin-option active" style="background-color:#c88b64;" data-color="#c88b64" data-power="Default" onclick="selectSkin(this)"></div>
-            <div class="skin-option" style="background-color:#d7a126;" data-color="#d7a126" data-power="Luck" onclick="selectSkin(this)"></div>
-            <div class="skin-option" style="background-color:#64c8c8;" data-color="#64c8c8" data-power="Shield" onclick="selectSkin(this)"></div>
-            <div class="skin-option" style="background-color:#a864c8;" data-color="#a864c8" data-power="Speed" onclick="selectSkin(this)"></div>
-        </div>
-
-        <button class="action-button" id="start-game-btn" onclick="startGame()">ابدأ المغامرة 🚀</button>
+        <button class="btn-entry" onclick="startAdventure()">دفع الرسوم ودخول المغامرة 🚪</button>
     </div>
 </div>
-
-<div id="game-hud" style="display:none;">
-    <div>النتيجة: <span id="score-val">0</span></div>
-    <div id="lives-display"></div>
-</div>
-<div id="progress-container" style="display:none;"><div id="progress-fill"></div></div>
-
-<div id="end-screen">
-    <div class="end-panel">
-        <h2 class="end-title" id="end-title"></h2>
-        <p class="end-stat">نقاطك النهائية: <span id="final-score">0</span></p>
-        <p class="end-stat" id="jackpot-ticket-msg"></p>
-        <p class="end-stat" id="balance-change-msg"></p>
-        <button class="btn-restart" onclick="showMainMenu()">العودة للقائمة الرئيسية</button>
-    </div>
-</div>
-
-<canvas id="gameCanvas"></canvas>
 
 <script>
-const cvs = document.getElementById('gameCanvas');
+const cvs = document.getElementById('canvas') || document.createElement('canvas');
+if(!document.getElementById('canvas')) document.body.appendChild(cvs);
 const ctx = cvs.getContext('2d');
 
-// Game Assets
-const assets = {
-    cat: new Image(), coin: new Image(), monster: new Image(), life: new Image(), jackpot: new Image(),
-    sfx: {
-        jump: new Audio('https://www.soundjay.com/buttons/sounds/button-2.mp3'),
-        collect: new Audio('https://www.soundjay.com/button/sounds/button-3.mp3'),
-        hit: new Audio('https://www.soundjay.com/misc/sounds/ding-4.mp3'),
-        lose: new Audio('https://www.soundjay.com/misc/sounds/error-2.mp3'),
-        win: new Audio('https://www.soundjay.com/buttons/sounds/button-7.mp3')
-    }
+const imgs = {
+    cat: new Image(), mon: new Image(), gold: new Image()
 };
-assets.cat.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png';
-assets.coin.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
-assets.monster.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png';
-assets.life.src = 'https://cdn-icons-png.flaticon.com/512/2107/2107845.png'; // Heart/Fish
-assets.jackpot.src = 'https://cdn-icons-png.flaticon.com/512/1057/1057287.png'; // Ticket/Diamond
+imgs.cat.src = 'https://cdn-icons-png.flaticon.com/512/616/616408.png';
+imgs.mon.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png'; // وجه مرعب
+imgs.gold.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
 
-// Game State
-let gameState = {
-    running: false,
-    score: 0,
-    lives: 3,
-    distance: 0,
-    frame: 0,
-    highScore: localStorage.getItem('himalayaHighScore') || 0,
-    playerBalance: localStorage.getItem('himalayaBalance') || 0,
-    selectedSkin: { color: '#c88b64', power: 'Default' },
-    jackpotTickets: 0,
-    dailyJackpotAmount: 100 // Example
-};
+let state = { playing: false, score: 0, lives: 3, dist: 0, frame: 0, coins: 500 };
+let player = { x: 0, y: 0, v: 0, g: 0.5, j: -10, w: 80, h: 80 };
+let objects = { obs: [], gold: [] };
 
-// Player Object
-let player = {
-    x: 0, y: 0, velocityY: 0, gravity: 0.48, jumpForce: -9.5,
-    width: 70, height: 60,
-    isInvincible: false, // For Shield power
-    invincibilityTimer: 0
-};
-
-// Game Entities
-let obstacles = [];
-let collectibles = []; // Coins, Lives, Jackpot Tickets
-
-// Utility Functions
-function resizeCanvas() {
-    cvs.width = window.innerWidth;
-    cvs.height = window.innerHeight;
+function resize() {
+    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
     player.x = cvs.width * 0.15;
 }
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas(); // Initial resize
+window.onresize = resize; resize();
 
-function playSound(sound) {
-    if (assets.sfx[sound]) {
-        assets.sfx[sound].currentTime = 0;
-        assets.sfx[sound].play().catch(e => console.log("Audio play failed:", e)); // Avoid console errors
-    }
+function startAdventure() {
+    if(state.coins < 10) return alert("لا تملك كوينز كافية!");
+    state.coins -= 10;
+    document.getElementById('coin-val').innerText = state.coins;
+    state.playing = true; state.score = 0; state.lives = 3; state.dist = 0;
+    objects = { obs: [], gold: [] };
+    player.y = cvs.height/2;
+    document.getElementById('ui-overlay').style.display = 'none';
+    render();
 }
 
-// UI Updates
-function updateMainMenuUI() {
-    document.getElementById('high-score').innerText = gameState.highScore;
-    document.getElementById('player-balance').innerText = parseFloat(gameState.playerBalance).toFixed(2);
-    document.getElementById('daily-jackpot').innerText = gameState.dailyJackpotAmount;
-}
-updateMainMenuUI();
+function render() {
+    if(!state.playing) return;
+    state.frame++; state.dist += 3;
 
-function selectSkin(element) {
-    document.querySelectorAll('.skin-option').forEach(opt => opt.classList.remove('active'));
-    element.classList.add('active');
-    gameState.selectedSkin.color = element.dataset.color;
-    gameState.selectedSkin.power = element.dataset.power;
-    playSound('jump'); // Feedback sound
-}
-
-function showMainMenu() {
-    document.getElementById('main-menu').style.opacity = 1;
-    document.getElementById('main-menu').style.display = 'flex';
-    document.getElementById('game-hud').style.display = 'none';
-    document.getElementById('progress-container').style.display = 'none';
-    document.getElementById('end-screen').style.opacity = 0;
-    document.getElementById('end-screen').style.pointerEvents = 'none';
-    updateMainMenuUI();
-}
-
-function updateGameHUD() {
-    document.getElementById('score-val').innerText = gameState.score;
-    let livesHTML = '';
-    for (let i = 0; i < gameState.lives; i++) livesHTML += '<span>❤️</span>';
-    document.getElementById('lives-display').innerHTML = livesHTML;
+    // رسم القصر المرعب
+    ctx.fillStyle = '#050000'; ctx.fillRect(0,0,cvs.width, cvs.height);
     
-    let progress = Math.min(100, (gameState.distance / 4000) * 100);
-    document.getElementById('progress-fill').style.width = progress + '%';
-}
+    // إضاءة البرق العشوائية
+    if(Math.random() > 0.98) { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(0,0,cvs.width, cvs.height); }
 
-// Game Logic
-function startGame() {
-    gameState.running = true;
-    gameState.score = 0;
-    gameState.lives = 3;
-    gameState.distance = 0;
-    gameState.frame = 0;
-    obstacles = [];
-    collectibles = [];
-    player.y = cvs.height / 2;
-    player.velocityY = 0;
-    player.isInvincible = false;
-    player.invincibilityTimer = 0;
-    
-    document.getElementById('main-menu').style.opacity = 0;
-    setTimeout(() => document.getElementById('main-menu').style.display = 'none', 500);
-    document.getElementById('game-hud').style.display = 'flex';
-    document.getElementById('progress-container').style.display = 'block';
-    playSound('win'); // Game Start sound
-    gameLoop();
-}
-
-function endGame() {
-    gameState.running = false;
-    playSound('lose'); // Game Over sound
-
-    // Update High Score
-    if (gameState.score > gameState.highScore) {
-        gameState.highScore = gameState.score;
-        localStorage.setItem('himalayaHighScore', gameState.highScore);
+    // رسم النوافذ والأعمدة
+    ctx.fillStyle = '#1a0505';
+    for(let i=0; i<5; i++) {
+        let x = (i * 400) - (state.dist % 400);
+        ctx.fillRect(x + 50, 100, 100, 200); // نافذة
     }
 
-    // Simulate Rank & Rewards based on score
-    let monetaryResult = 0;
-    let rankMessage = "";
-    if (gameState.score >= 200) { // Top 5-ish
-        monetaryResult = (Math.random() * 5 + 5).toFixed(2); // $5-$10
-        rankMessage = `لقد ربحت 💰 <b>$${monetaryResult}</b>!`;
-    } else if (gameState.score >= 100) { // Top 15-ish
-        monetaryResult = 1;
-        rankMessage = `لقد ربحت 💰 <b>$${monetaryResult}</b>!`;
-    } else { // Loser
-        monetaryResult = -1;
-        rankMessage = `لقد خسرت 💸 <b>$1</b> من رصيدك.`;
+    // القطة
+    player.v += player.g; player.y += player.v;
+    ctx.shadowBlur = 15; ctx.shadowColor = "rgba(255,215,0,0.5)";
+    ctx.drawImage(imgs.cat, player.x, player.y, player.w, player.h);
+    ctx.shadowBlur = 0;
+
+    // توليد الوحوش (الوجوه المرعبة)
+    if(state.frame % 60 == 0) {
+        objects.obs.push({x: cvs.width, y: Math.random()*(cvs.height-150), s: 90 + Math.random()*40});
     }
-    gameState.playerBalance = parseFloat(gameState.playerBalance) + parseFloat(monetaryResult);
-    localStorage.setItem('himalayaBalance', gameState.playerBalance);
-
-    document.getElementById('end-title').innerText = gameState.lives > 0 ? "تهانينا! اكتملت المغامرة!" : "انتهت اللعبة!";
-    document.getElementById('final-score').innerText = gameState.score;
-    document.getElementById('jackpot-ticket-msg').innerText = `عدد تذاكر اليانصيب: ${gameState.jackpotTickets}`;
-    document.getElementById('balance-change-msg').innerHTML = rankMessage;
-
-    document.getElementById('end-screen').style.opacity = 1;
-    document.getElementById('end-screen').style.pointerEvents = 'auto';
-}
-
-function gameLoop() {
-    if (!gameState.running) return;
-
-    gameState.frame++;
-    gameState.distance += 2.5; // Increased speed for challenge
-
-    // Player movement
-    player.velocityY += player.gravity;
-    player.y += player.velocityY;
-
-    // Boundary checks
-    if (player.y < 0 || player.y + player.height > cvs.height) {
-        player.y = Math.max(0, Math.min(cvs.height - player.height, player.y)); // Clamp player position
-        if (player.y === 0 || player.y === cvs.height - player.height) {
-            player.velocityY = 0; // Stop vertical movement if hitting top/bottom
-            takeHit(); // Also take a hit if hitting walls
-        }
-    }
-
-    // Invincibility Timer
-    if (player.isInvincible) {
-        player.invincibilityTimer--;
-        if (player.invincibilityTimer <= 0) {
-            player.isInvincible = false;
-        }
-    }
-
-    // Spawn Obstacles
-    if (gameState.frame % (Math.max(40, 90 - gameState.score / 20)) === 0) {
-        obstacles.push({
-            x: cvs.width,
-            y: Math.random() * (cvs.height - 200) + 100, // Avoid top/bottom walls
-            width: 70, height: 70,
-            speed: 5 + gameState.score / 100 // Monster speed increases with score
-        });
-    }
-
-    // Spawn Collectibles (Coins, Lives, Jackpot Tickets)
-    if (gameState.frame % 70 === 0) {
-        let type = 'coin';
-        let rand = Math.random();
-        if (rand < 0.05) type = 'jackpot'; // 5% chance for jackpot ticket
-        else if (rand < 0.15 && gameState.lives < 3) type = 'life'; // 10% chance for extra life if not full
+    objects.obs.forEach((o, i) => {
+        o.x -= (9 + state.score/50);
+        // حركة "تذبذب" للوحش لزيادة الرعب
+        let shake = Math.sin(state.frame * 0.2) * 5;
+        ctx.drawImage(imgs.mon, o.x, o.y + shake, o.s, o.s);
         
-        collectibles.push({
-            x: cvs.width,
-            y: Math.random() * (cvs.height - 200) + 100,
-            width: 40, height: 40, type
-        });
-    }
-
-    // Update and Draw
-    drawGame();
-    updateGameHUD();
-
-    if (gameState.distance >= 4000) { // End of a "stage" or infinite run checkpoint
-        endGame();
-    } else {
-        requestAnimationFrame(gameLoop);
-    }
-}
-
-function drawGame() {
-    // Background (dynamic color changes with distance/score)
-    let hue = (gameState.distance / 100) % 360;
-    ctx.fillStyle = `hsl(${hue}, 20%, 10%)`;
-    ctx.fillRect(0, 0, cvs.width, cvs.height);
-
-    // Dynamic cave walls (3D effect)
-    let wallHeight = cvs.height * 0.15;
-    ctx.fillStyle = `hsl(${hue + 20 % 360}, 30%, 20%)`; // Slightly different hue
-    
-    for (let i = 0; i < cvs.width; i += 30) {
-        // Top wall
-        let waveTop = Math.sin((i + gameState.frame * 0.1) * 0.05) * 20;
-        ctx.fillRect(i, 0, 30, wallHeight + waveTop);
-
-        // Bottom wall
-        let waveBottom = Math.cos((i + gameState.frame * 0.1) * 0.05) * 20;
-        ctx.fillRect(i, cvs.height - (wallHeight + waveBottom), 30, wallHeight + waveBottom);
-    }
-
-    // Player
-    ctx.save();
-    ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
-    ctx.rotate(player.velocityY * 0.03); // Rotate slightly on jump/fall
-    ctx.filter = `drop-shadow(0 0 10px ${player.isInvincible ? var(--cyan) : gameState.selectedSkin.color})`; // Invincibility glow
-    ctx.drawImage(assets.cat, -player.width / 2, -player.height / 2, player.width, player.height);
-    ctx.restore();
-    ctx.filter = 'none';
-
-    // Obstacles
-    obstacles.forEach((obj, index) => {
-        obj.x -= obj.speed;
-        ctx.drawImage(assets.monster, obj.x, obj.y, obj.width, obj.height);
-        if (checkCollision(player, obj)) {
-            if (!player.isInvincible) {
-                takeHit();
-            }
-            obstacles.splice(index, 1);
+        // اصطدام
+        if(player.x+20 < o.x+o.s-20 && player.x+player.w-20 > o.x+20 && player.y+20 < o.y+o.s-20 && player.y+player.h-20 > o.y+20) {
+            state.lives--; 
+            objects.obs.splice(i, 1);
+            if(state.lives <= 0) gameOver();
         }
-        if (obj.x + obj.width < 0) obstacles.splice(index, 1);
     });
 
-    // Collectibles
-    collectibles.forEach((obj, index) => {
-        obj.x -= 4; // Collectibles move slower
-        let img = assets.coin;
-        if (obj.type === 'life') img = assets.life;
-        else if (obj.type === 'jackpot') img = assets.jackpot;
-        
-        ctx.drawImage(img, obj.x, obj.y, obj.width, obj.height);
-
-        if (checkCollision(player, obj)) {
-            playSound('collect');
-            if (obj.type === 'coin') {
-                gameState.score += 10;
-            } else if (obj.type === 'life') {
-                if (gameState.lives < 3) gameState.lives++;
-            } else if (obj.type === 'jackpot') {
-                gameState.jackpotTickets++;
-            }
-            collectibles.splice(index, 1);
+    // الذهب (الكوينز)
+    if(state.frame % 80 == 0) objects.gold.push({x: cvs.width, y: Math.random()*cvs.height});
+    objects.gold.forEach((g, i) => {
+        g.x -= 7;
+        ctx.drawImage(imgs.gold, g.x, g.y, 40, 40);
+        if(Math.hypot(player.x+40-g.x, player.y+40-g.y) < 50) {
+            state.score += 10; objects.gold.splice(i,1);
         }
-        if (obj.x + obj.width < 0) collectibles.splice(index, 1);
     });
+
+    // نهاية المرحلة (خط النهاية)
+    if(state.dist > 5000) winStage();
+
+    document.getElementById('lives-container').innerText = "❤️".repeat(state.lives);
+    requestAnimationFrame(render);
 }
 
-function checkCollision(obj1, obj2) {
-    return obj1.x < obj2.x + obj2.width &&
-           obj1.x + obj1.width > obj2.x &&
-           obj1.y < obj2.y + obj2.height &&
-           obj1.y + obj1.height > obj2.y;
+function gameOver() {
+    state.playing = false;
+    document.getElementById('ui-overlay').style.display = 'flex';
+    document.querySelector('h1').innerText = "لقد التهمك الحارس!";
+    document.querySelector('p').innerText = "خسرت رهانك.. حاول مرة أخرى لتستعيد كرامتك!";
 }
 
-function takeHit() {
-    if (gameState.selectedSkin.power === 'Shield' && !player.isInvincible) {
-        player.isInvincible = true;
-        player.invincibilityTimer = 120; // 2 seconds of invincibility
-        playSound('hit');
-        return;
-    }
-    
-    gameState.lives--;
-    playSound('hit');
-    if (gameState.lives <= 0) {
-        endGame();
-    }
+function winStage() {
+    state.playing = false;
+    state.coins += 50; // مكافأة الفوز
+    document.getElementById('ui-overlay').style.display = 'flex';
+    document.querySelector('h1').innerText = "بطل القصر!";
+    document.querySelector('p').innerText = "ربحت 50 كوينز! أنت الآن تقترب من صدارة المتنافسين.";
 }
 
-// Input Handling
-function playerJump() {
-    if (gameState.running) {
-        player.velocityY = player.jumpForce;
-        playSound('jump');
-    }
-}
-window.addEventListener('mousedown', playerJump);
-window.addEventListener('touchstart', (e) => { e.preventDefault(); playerJump(); });
-
-// Load all assets before showing the menu
-Promise.all(Object.values(assets.sfx).map(sfx => new Promise(resolve => sfx.oncanplaythrough = resolve)))
-    .then(() => Promise.all(Object.values(assets).filter(a => a instanceof Image).map(img => new Promise(resolve => img.onload = resolve))))
-    .then(() => {
-        document.getElementById('main-menu').style.opacity = 1;
-        document.getElementById('start-game-btn').removeAttribute('disabled'); // Enable button after loading
-    })
-    .catch(error => console.error("Error loading assets:", error));
-
+// التحكم
+window.addEventListener('mousedown', () => { if(state.playing) player.v = player.j; });
+window.addEventListener('touchstart', (e) => { if(state.playing) player.v = player.j; e.preventDefault(); });
 </script>
 </body>
 </html>
