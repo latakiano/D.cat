@@ -3,382 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Himalaya: Echoes of Eternity</title>
+    <title>Himalaya: Cat's Revenge</title>
     <style>
-        :root { --gold: #FFD700; --neon-blue: #00f2ff; --blood: #ff0000; --dark: #0a0a0a; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root { --gold: #FFD700; --blood: #ff3131; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
+        
+        /* واجهة HUD */
+        #hud { position: fixed; top: 15px; width: 100%; padding: 0 20px; z-index: 1000; display: flex; justify-content: space-between; color: white; font-weight: bold; }
+        .stat-item { background: rgba(0,0,0,0.8); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--gold); }
 
-        /* الواجهة الرئيسية والأسواق */
-        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); color: white; }
-        .royal-card { background: linear-gradient(145deg, #181818, #000); border: 2px solid var(--gold); border-radius: 30px; padding: 30px; width: 90%; max-width: 550px; text-align: center; box-shadow: 0 0 70px rgba(255,215,0,0.15); }
-        
-        .market-scroller { display: flex; gap: 15px; overflow-x: auto; padding: 15px 5px; scrollbar-width: none; }
-        .cat-item { min-width: 120px; background: #222; padding: 15px; border-radius: 20px; border: 1px solid #444; transition: 0.3s; cursor: pointer; }
-        .cat-item.active { border-color: var(--gold); background: #333; transform: scale(1.05); box-shadow: 0 0 15px rgba(255,215,0,0.5); }
-        .cat-item img { width: 70px; height: 70px; margin-bottom: 10px; }
-        
-        .btn-play { background: var(--gold); color: #000; width: 100%; padding: 20px; border-radius: 50px; border: none; font-size: 26px; font-weight: bold; cursor: pointer; margin-top: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
-        
-        /* HUD - واجهة اللعب */
-        #hud { position: fixed; top: 15px; width: 100%; padding: 10px 25px; z-index: 1000; display: flex; justify-content: space-between; color: white; font-weight: bold; text-shadow: 2px 2px 5px #000; }
-        .stat { background: rgba(0,0,0,0.7); padding: 8px 18px; border-radius: 25px; border: 1px solid var(--gold); }
-        .life-icon { color: var(--blood); margin-left: 5px; font-size: 20px; }
+        /* الشاشة الرئيسية */
+        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; text-align: center; color: white; }
+        .menu { background: #111; border: 3px solid var(--gold); padding: 30px; border-radius: 25px; width: 85%; max-width: 400px; }
+        .btn-start { background: var(--gold); color: #000; border: none; padding: 15px 40px; font-size: 22px; font-weight: bold; border-radius: 50px; cursor: pointer; margin-top: 20px; }
 
-        #flash { position: fixed; inset: 0; background: var(--blood); opacity: 0; pointer-events: none; z-index: 2500; transition: opacity 0.1s; }
         canvas { display: block; }
     </style>
 </head>
 <body>
 
-<div id="flash"></div>
-
-<div id="hud" style="display:none;">
-    <div class="stat">💰 $<span id="balance">500</span></div>
-    <div class="stat" style="border-color:red">❤️ <span id="lives"></span></div>
-    <div class="stat">🏆 <span id="score">0</span></div>
+<div id="hud">
+    <div class="stat-item">💰 <span id="coins">0</span></div>
+    <div class="stat-item">❤️ <span id="lives">❤️❤️❤️</span></div>
 </div>
 
 <div id="overlay">
-    <div class="royal-card">
-        <h1 style="color:var(--gold); margin:0; font-size:36px;">قاعة أساطير الهيمالايا</h1>
-        <p style="color:#bbb; font-size:16px;">اختر قطتك الملكية وراهن لتغزو العرش</p>
-
-        <div class="market-scroller">
-            <div class="cat-item active" data-type="1" data-price="0" data-lives="3" onclick="selectCat(this)">
-                <img src="https://cdn-icons-png.flaticon.com/512/1864/1864514.png">
-                <div>العادي</div><small>3 أرواح | مجاني</small>
-            </div>
-            <div class="cat-item" data-type="2" data-price="100" data-lives="5" onclick="selectCat(this)">
-                <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png">
-                <div>الملكي</div><small>5 أرواح | 100$</small>
-            </div>
-            <div class="cat-item" data-type="3" data-price="500" data-lives="9" onclick="selectCat(this)">
-                <img src="https://cdn-icons-png.flaticon.com/512/616/616430.png">
-                <div>الأسطوري</div><small>9 أرواح | 500$</small>
-            </div>
-        </div>
-
-        <div style="background:rgba(255,215,0,0.1); padding:20px; border-radius:15px; margin-top:20px;">
-            <div id="palace-info" style="font-size:18px;"><b>قصر الغبار (المستوى 1)</b><br>رسوم الدخول: 10$ | الجائزة: 50$</div>
-        </div>
-
-        <button class="btn-play" onclick="startRoyalGame()">دخول القصر 🐾</button>
+    <div class="menu">
+        <h1 style="color:var(--gold);">هجوم الوحوش 🐾</h1>
+        <p>ادفع 10 كوينز للدخول<br>واجمع الذهب لتصبح ملك القصر!</p>
+        <button class="btn-start" onclick="startGame()">ابدأ المغامرة 🚀</button>
     </div>
 </div>
 
 <script>
-const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
-document.body.appendChild(canvas);
+const cvs = document.createElement('canvas');
+const ctx = cvs.getContext('2d');
+document.body.appendChild(cvs);
 
-// Game Assets (Images and Sounds)
-const assets = {
-    cat: new Image(), coin: new Image(), monster1: new Image(), monster2: new Image(), shield: new Image(), heart: new Image(), magnet: new Image(),
-    sfx: {
-        jump: new Audio('https://www.soundjay.com/buttons/sounds/button-2.mp3'),
-        collect: new Audio('https://www.soundjay.com/button/sounds/button-3.mp3'),
-        hit: new Audio('https://www.soundjay.com/misc/sounds/ding-4.mp3'),
-        lose: new Audio('https://www.soundjay.com/misc/sounds/error-2.mp3'),
-        win: new Audio('https://www.soundjay.com/buttons/sounds/button-7.mp3')
-    }
+// الأصول (الصور)
+const imgs = {
+    cat: new Image(),
+    monster: new Image(),
+    coin: new Image()
 };
-assets.cat.src = 'https://cdn-icons-png.flaticon.com/512/616/616408.png';
-assets.coin.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
-assets.monster1.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png'; // Basic monster
-assets.monster2.src = 'https://cdn-icons-png.flaticon.com/512/865/865761.png'; // Shadow monster (more menacing)
-assets.shield.src = 'https://cdn-icons-png.flaticon.com/512/2807/2807494.png';
-assets.heart.src = 'https://cdn-icons-png.flaticon.com/512/2107/2107845.png';
-assets.magnet.src = 'https://cdn-icons-png.flaticon.com/512/1000/1000732.png';
+imgs.cat.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png'; // قطة
+imgs.monster.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png'; // وحش مرعب
+imgs.coin.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png'; // كوين ذهبي
 
-// Game Configuration and State
-let config = {
-    balance: 1000,
-    currentCat: { type: 1, price: 0, lives: 3 },
-    unlockedLevels: 1
-};
-let game = {
-    playing: false, score: 0, lives: 0, dist: 0, frame: 0, level: 1,
-    isShielded: false, magnetActive: false, magnetTimer: 0
-};
-let player = { x: 0, y: 0, v: 0, g: 0.5, j: -10, w: 85, h: 80, initialY: 0 };
-let world = { obs: [], items: [], particles: [] };
+// محرك الصوت (محاكاة ماريو برمجياً)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-// Utility Functions
+function playMarioJump() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+}
+
+function playMarioCoin() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(987.77, audioCtx.currentTime); // B5
+    osc.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.1); // E6
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+}
+
+// حالة اللعبة
+let state = { playing: false, score: 0, lives: 3, dist: 0 };
+let player = { x: 50, y: 200, v: 0, g: 0.5, j: -10, w: 70, h: 70 };
+let enemies = [], coins = [];
+
 function resize() {
-    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    player.x = canvas.width * 0.15;
-    player.initialY = canvas.height / 2;
-    player.y = player.initialY;
+    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+    player.x = cvs.width * 0.15;
 }
 window.onresize = resize; resize();
 
-function playSFX(sound) {
-    if (assets.sfx[sound]) {
-        assets.sfx[sound].currentTime = 0;
-        assets.sfx[sound].volume = 0.5; // Adjust volume
-        assets.sfx[sound].play().catch(e => console.error("Audio play failed:", e));
-    }
-}
-
-function updateHUD() {
-    document.getElementById('balance').innerText = config.balance;
-    let livesHTML = '';
-    for (let i = 0; i < game.lives; i++) {
-        livesHTML += '<span class="life-icon">❤️</span>';
-    }
-    document.getElementById('lives').innerHTML = livesHTML;
-    document.getElementById('score').innerText = game.score;
-}
-
-// Particle Effects
-function createParticles(x, y, color, count = 10) {
-    for (let i = 0; i < count; i++) {
-        world.particles.push({
-            x: x, y: y,
-            vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
-            life: 30 + Math.random() * 30, // frames
-            color: color,
-            radius: 3 + Math.random() * 3
-        });
-    }
-}
-
-// Game Logic
-function selectCat(el) {
-    const type = parseInt(el.dataset.type);
-    const price = parseInt(el.dataset.price);
-    const lives = parseInt(el.dataset.lives);
-
-    if (config.balance < price) return alert("رصيدك غير كافٍ لشراء هذه القطة!");
-    
-    document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('active'));
-    el.classList.add('active');
-    
-    config.currentCat = { type, price, lives };
-    playSFX('collect'); // Selection sound
-}
-
-function startRoyalGame() {
-    let fee = 10 * game.level;
-    if (config.balance < fee) return alert("لا تملك رسوم الدخول لهذا القصر!");
-    
-    config.balance -= fee;
-    game.playing = true; game.score = 0; game.dist = 0; game.frame = 0;
-    game.lives = config.currentCat.lives; // Set lives based on selected cat
-    game.isShielded = false;
-    game.magnetActive = false;
-    world = { obs: [], items: [], particles: [] };
-    player.y = player.initialY;
-
+function startGame() {
+    state = { playing: true, score: 0, lives: 3, dist: 0 };
+    enemies = []; coins = [];
+    player.y = cvs.height / 2;
     document.getElementById('overlay').style.display = 'none';
-    document.getElementById('hud').style.display = 'flex';
-    updateHUD();
-    playSFX('win'); // Game start sound
+    audioCtx.resume(); // تفعيل الصوت
     loop();
 }
 
 function loop() {
-    if (!game.playing) return;
-    game.frame++;
-    game.dist += (4 + game.level * 0.5); // Speed increases with level
-
-    // Apply gravity to player
+    if(!state.playing) return;
+    
+    // مسح الشاشة (خلفية القصر)
+    ctx.fillStyle = '#0a0510'; ctx.fillRect(0,0,cvs.width, cvs.height);
+    
+    // تحريك القطة
     player.v += player.g; player.y += player.v;
-
-    // Boundary checks for player
-    if (player.y < 0) { player.y = 0; player.v = 0; }
-    if (player.y + player.h > canvas.height) { player.y = canvas.height - player.h; player.v = 0; }
-
-    // Update Timers
-    if (game.magnetActive) {
-        game.magnetTimer--;
-        if (game.magnetTimer <= 0) game.magnetActive = false;
-    }
-
-    // Spawn Obstacles
-    if (game.frame % Math.max(20, 70 - game.level * 5) === 0) {
-        const type = Math.random() < 0.2 + (game.level * 0.05) ? 'monster2' : 'monster1'; // More aggressive monsters in higher levels
-        const size = type === 'monster2' ? 120 : 90; // Larger for aggressive
-        world.obs.push({
-            x: canvas.width, y: Math.random() * (canvas.height - size),
-            w: size, h: size, type: type,
-            speed: 7 + game.level * 1.5,
-            health: type === 'monster2' ? 2 : 1 // Boss monsters might need more hits
-        });
-    }
-
-    // Spawn Collectibles (Gold, Heart, Shield, Magnet)
-    if (game.frame % 80 === 0) {
-        const rand = Math.random();
-        let type = 'coin';
-        if (rand < 0.1 && game.lives < config.currentCat.lives) type = 'heart';
-        else if (rand < 0.15 && !game.isShielded) type = 'shield';
-        else if (rand < 0.18 && !game.magnetActive) type = 'magnet';
-        
-        world.items.push({ x: canvas.width, y: Math.random() * (canvas.height - 50), w: 40, h: 40, type: type });
-    }
-
-    // Update and Draw World
-    drawGame();
-    updateHUD();
-
-    if (game.dist > 10000) { // Level completion distance
-        endGame(true);
-    } else {
-        requestAnimationFrame(loop);
-    }
-}
-
-function drawGame() {
-    // Background (Dynamic Palace with lighting)
-    ctx.fillStyle = `hsl(${(game.dist / 50) % 360}, 15%, 8%)`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Palace walls/pillars with depth effect
-    ctx.fillStyle = `hsl(${(game.dist / 50) % 360}, 20%, 15%)`;
-    for (let i = 0; i < 5; i++) {
-        let xOffset = (i * 400 - (game.dist % 400));
-        ctx.fillRect(xOffset + 50, 0, 100, canvas.height); // Pillars
-    }
-
-    // Player (Cat)
-    ctx.save();
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = game.isShielded ? varColor('shield') : varColor('cat'); // Shield glow
-    ctx.drawImage(assets.cat, player.x, player.y, player.w, player.h);
-    ctx.restore();
-
-    // Obstacles
-    world.obs.forEach((obj, index) => {
-        obj.x -= obj.speed;
-        ctx.save();
-        ctx.shadowBlur = 10 + (obj.type === 'monster2' ? 15 : 0);
-        ctx.shadowColor = obj.type === 'monster2' ? varColor('blood') : varColor('dark'); // Menacing glow
-        ctx.drawImage(assets[obj.type], obj.x, obj.y, obj.w, obj.h);
-        
-        // Monster Health Bar (simple)
-        if (obj.health > 1) {
-            ctx.fillStyle = 'red';
-            ctx.fillRect(obj.x, obj.y - 10, obj.w * (obj.health / 2), 5);
-        }
-        ctx.restore();
-
-        if (checkCollision(player, obj)) {
-            if (game.isShielded) {
-                game.isShielded = false; // Shield used
-                playSFX('hit');
-                createParticles(obj.x + obj.w / 2, obj.y + obj.h / 2, 'blue');
-            } else {
-                game.lives--;
-                playSFX('hit');
-                createParticles(player.x + player.w / 2, player.y + player.h / 2, 'red');
-            }
-            world.obs.splice(index, 1);
-            if (game.lives <= 0) endGame(false);
-        }
-        if (obj.x + obj.w < 0) world.obs.splice(index, 1);
-    });
-
-    // Collectibles
-    world.items.forEach((obj, index) => {
-        obj.x -= 5;
-        if (game.magnetActive) { // Magnet effect
-            let dx = player.x - obj.x;
-            let dy = player.y - obj.y;
-            let dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 200) { // Magnet radius
-                obj.x += dx / dist * 8;
-                obj.y += dy / dist * 8;
-            }
-        }
-        
-        let img = assets.coin;
-        let color = 'gold';
-        if (obj.type === 'heart') { img = assets.heart; color = 'red'; }
-        else if (obj.type === 'shield') { img = assets.shield; color = 'blue'; }
-        else if (obj.type === 'magnet') { img = assets.magnet; color = 'purple'; }
-        
-        ctx.drawImage(img, obj.x, obj.y, obj.w, obj.h);
-
-        if (checkCollision(player, obj)) {
-            playSFX('collect');
-            createParticles(obj.x + obj.w / 2, obj.y + obj.h / 2, color);
-            if (obj.type === 'coin') {
-                game.score += 10;
-            } else if (obj.type === 'heart' && game.lives < config.currentCat.lives) {
-                game.lives++;
-            } else if (obj.type === 'shield') {
-                game.isShielded = true;
-            } else if (obj.type === 'magnet') {
-                game.magnetActive = true;
-                game.magnetTimer = 300; // 5 seconds
-            }
-            world.items.splice(index, 1);
-        }
-        if (obj.x + obj.w < 0) world.items.splice(index, 1);
-    });
-
-    // Particles
-    world.particles.forEach((p, index) => {
-        p.x += p.vx; p.y += p.vy;
-        p.life--;
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life / 60;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        if (p.life <= 0) world.particles.splice(index, 1);
-    });
-}
-
-function checkCollision(obj1, obj2) {
-    return obj1.x < obj2.x + obj2.w &&
-           obj1.x + obj1.w > obj2.x &&
-           obj1.y < obj2.y + obj2.h &&
-           obj1.y + obj1.h > obj2.y;
-}
-
-function varColor(type) {
-    if (type === 'cat') return config.currentCat.type === 3 ? '#a864c8' : '#FFD700';
-    if (type === 'shield') return '#00f2ff';
-    if (type === 'blood') return '#ff0000';
-    if (type === 'dark') return '#000';
-    return '#fff';
-}
-
-function endGame(win) {
-    game.playing = false;
-    playSFX(win ? 'win' : 'lose');
+    if(player.y > cvs.height - player.h) player.y = cvs.height - player.h;
+    if(player.y < 0) player.y = 0;
     
-    if (win) {
-        let winPrize = 50 * game.level;
-        config.balance += winPrize;
-        alert(`🌟 نصر ملكي! ربحت ${winPrize}$`);
-        game.level++; // Advance to next level
-    } else {
-        alert("💀 انتهت الرحلة في دهاليز القصر!");
+    ctx.drawImage(imgs.cat, player.x, player.y, player.w, player.h);
+
+    // الوحوش (بدلاً من الدراجات)
+    if(Math.random() < 0.02) {
+        enemies.push({ x: cvs.width, y: Math.random()*(cvs.height-80), s: 80 });
     }
-    
+    enemies.forEach((en, i) => {
+        en.x -= 6;
+        ctx.drawImage(imgs.monster, en.x, en.y, en.s, en.s);
+        // تصادم مع الوحش
+        if(player.x < en.x + en.s - 20 && player.x + player.w > en.x + 20 &&
+           player.y < en.y + en.s - 20 && player.y + player.h > en.y + 20) {
+            state.lives--;
+            enemies.splice(i, 1);
+            if(state.lives <= 0) gameOver();
+        }
+    });
+
+    // الكوينز (صوت ماريو عند الجمع)
+    if(Math.random() < 0.03) {
+        coins.push({ x: cvs.width, y: Math.random()*(cvs.height-40), s: 40 });
+    }
+    coins.forEach((c, i) => {
+        c.x -= 5;
+        ctx.drawImage(imgs.coin, c.x, c.y, c.s, c.s);
+        if(Math.hypot(player.x+35 - c.x, player.y+35 - c.y) < 40) {
+            state.score += 10;
+            playMarioCoin(); // صوت الكوين!
+            coins.splice(i, 1);
+            document.getElementById('coins').innerText = state.score;
+        }
+    });
+
+    document.getElementById('lives').innerText = "❤️".repeat(state.lives);
+    requestAnimationFrame(loop);
+}
+
+function gameOver() {
+    state.playing = false;
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementById('hud').style.display = 'none';
-    updateHUD();
+    document.querySelector('h1').innerText = "التهمتك الوحوش! 💀";
 }
 
-// Input Handling
-window.onmousedown = () => { if (game.playing) { player.v = player.j; playSFX('jump'); } };
-window.ontouchstart = (e) => { if (game.playing) { player.v = player.j; playSFX('jump'); } e.preventDefault(); };
+// القفز بصوت ماريو
+const jump = () => { 
+    if(state.playing) { 
+        player.v = player.j; 
+        playMarioJump(); // صوت القفزة!
+    } 
+};
+window.onmousedown = jump;
+window.ontouchstart = (e) => { e.preventDefault(); jump(); };
 
-// Initial setup to load assets then show menu
-Promise.all(Object.values(assets).filter(a => a instanceof Image).map(img => new Promise(resolve => img.onload = resolve)))
-    .then(() => {
-        document.getElementById('balance').innerText = config.balance;
-        updateHUD();
-        // Set initial palace info for level 1
-        document.getElementById('palace-info').innerHTML = `<b>قصر الغبار (المستوى ${game.level})</b><br>رسوم الدخول: ${10 * game.level}$ | الجائزة: ${50 * game.level}$`;
-        document.getElementById('overlay').style.display = 'flex';
-    })
-    .catch(error => console.error("Error loading assets:", error));
 </script>
 </body>
 </html>
