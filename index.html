@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Himalaya: Cat Revenge</title>
+    <title>Himalaya: Absolute Reality</title>
     <style>
-        :root { --gold: #FFD700; --blood: #ff0000; }
+        :root { --gold: #FFD700; --blood: #ff3131; }
         * { box-sizing: border-box; touch-action: none; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Arial', sans-serif; }
         
-        /* واجهة اللعب */
+        /* واجهة HUD احترافية */
         #hud { position: fixed; top: 15px; width: 100%; display: flex; justify-content: space-around; z-index: 1000; }
         .stat { background: rgba(0,0,0,0.85); border: 2px solid var(--gold); color: white; padding: 10px 20px; border-radius: 50px; font-weight: bold; box-shadow: 0 0 15px var(--gold); }
 
-        /* شاشة البداية */
-        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .card { background: #111; border: 3px solid var(--gold); border-radius: 30px; padding: 40px; text-align: center; color: white; width: 85%; max-width: 450px; }
+        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .card { background: #111; border: 3px solid var(--gold); border-radius: 30px; padding: 40px; color: white; width: 85%; max-width: 450px; }
         .btn { background: var(--gold); color: black; border: none; padding: 15px 50px; font-size: 24px; font-weight: bold; border-radius: 50px; cursor: pointer; margin-top: 20px; }
         
         canvas { display: block; }
@@ -25,15 +24,15 @@
 
 <div id="hud">
     <div class="stat">💰 <span id="coin-val">520</span></div>
-    <div class="stat">🏰 <span id="stage-name">سرداب الغبار</span></div>
+    <div class="stat">🏰 سرداب الغبار</div>
     <div class="stat">❤️ <span id="life-val">❤️❤️❤️</span></div>
 </div>
 
 <div id="overlay">
     <div class="card">
         <h1 style="color:var(--gold);">إمبراطورية القطط 🐾</h1>
-        <p id="m-desc">المرحلة 1: ادفع 10 كوينز لمحاربة الوحوش!</p>
-        <button class="btn" onclick="startLevel()">دخول القصر 🔥</button>
+        <p>المرحلة 1: لا دراجات هنا.. فقط وحوش حقيقية!</p>
+        <button class="btn" onclick="startLevel()">دخول المعركة 🔥</button>
     </div>
 </div>
 
@@ -42,22 +41,35 @@ const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 document.body.appendChild(canvas);
 
-// صور مضمونة (القطة والوحوش)
-const img = {
-    cat: new Image(),
-    monster: new Image(),
-    coin: new Image()
-};
-// صور مباشرة من أيقونات الألعاب لضمان عدم ظهور دراجات!
-img.cat.src = 'https://img.icons8.com/plasticine/200/cat.png'; 
-img.monster.src = 'https://img.icons8.com/flat-round/200/skull.png'; // وحش بشكل جمجمة مرعبة
-img.coin.src = 'https://img.icons8.com/color/100/coins.png';
+// مبرمج كبير؟ لنرسم القطة والوحش بالكود (Pixel Art style)
+function drawCat(x, y, size) {
+    ctx.fillStyle = "#f0f0f0"; // جسم القطة
+    ctx.fillRect(x, y + size/2, size, size/2);
+    ctx.fillRect(x + size*0.7, y, size*0.3, size/2); // الرأس
+    ctx.fillStyle = "#000"; // العيون
+    ctx.fillRect(x + size*0.8, y + 10, 5, 5);
+    ctx.fillStyle = "#f0f0f0"; // الأذان
+    ctx.beginPath(); ctx.moveTo(x+size*0.7, y); ctx.lineTo(x+size*0.8, y-10); ctx.lineTo(x+size*0.9, y); ctx.fill();
+}
 
-let state = { playing: false, stage: 1, coins: 520, lives: 3, dist: 0, target: 3000 };
-let player = { x: 50, y: 0, v: 0, g: 0.5, j: -10, w: 80, h: 80 };
-let obs = [], gold = [];
+function drawMonster(x, y, size) {
+    ctx.fillStyle = "#ff3131"; // لون الوحش أحمر مرعب
+    ctx.beginPath();
+    ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "black"; // عيون الوحش
+    ctx.fillRect(x + 20, y + 20, 10, 10);
+    ctx.fillRect(x + size - 30, y + 20, 10, 10);
+    ctx.fillRect(x + 20, y + size - 30, size - 40, 5); // فم غاضب
+}
 
-// محرك أصوات ماريو
+function drawCoin(x, y, size) {
+    ctx.fillStyle = "gold";
+    ctx.beginPath(); ctx.arc(x+size/2, y+size/2, size/2, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#b8860b"; ctx.stroke();
+}
+
+// محرك أصوات ماريو (برمجي خالص)
 const audio = new (window.AudioContext || window.webkitAudioContext)();
 function playSFX(type) {
     if(audio.state === 'suspended') audio.resume();
@@ -78,6 +90,10 @@ function playSFX(type) {
     }
 }
 
+let state = { playing: false, stage: 1, coins: 520, lives: 3 };
+let player = { x: 50, y: 0, v: 0, g: 0.5, j: -10, w: 60, h: 60 };
+let obs = [], gold = [];
+
 function resize() {
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     player.x = canvas.width * 0.15;
@@ -85,7 +101,7 @@ function resize() {
 window.onresize = resize; resize();
 
 function startLevel() {
-    state.playing = true; state.dist = 0; state.lives = 3;
+    state.playing = true; state.lives = 3;
     obs = []; gold = [];
     player.y = canvas.height / 2;
     document.getElementById('overlay').style.display = 'none';
@@ -94,36 +110,30 @@ function startLevel() {
 
 function loop() {
     if(!state.playing) return;
-    
-    // خلفية رعب داكنة
     ctx.fillStyle = '#050505'; ctx.fillRect(0,0,canvas.width, canvas.height);
     
-    // تحريك القطة
     player.v += player.g; player.y += player.v;
     if(player.y > canvas.height - player.h) player.y = canvas.height - player.h;
     if(player.y < 0) player.y = 0;
-    ctx.drawImage(img.cat, player.x, player.y, player.w, player.h);
+    
+    drawCat(player.x, player.y, player.w);
 
-    // توليد الوحوش (تأكد من شكل الجمجمة أو الوحش)
-    if(Math.random() < 0.02) {
-        obs.push({ x: canvas.width, y: Math.random()*(canvas.height-80), s: 90 });
-    }
+    if(Math.random() < 0.02) obs.push({ x: canvas.width, y: Math.random()*(canvas.height-60), s: 60 });
     obs.forEach((o, i) => {
         o.x -= 7;
-        ctx.drawImage(img.monster, o.x, o.y, o.s, o.s);
-        if(player.x < o.x+o.s-20 && player.x+player.w > o.x+20 && player.y < o.y+o.s-20 && player.y+player.h > o.y+20) {
+        drawMonster(o.x, o.y, o.s);
+        if(player.x < o.x+o.s && player.x+player.w > o.x && player.y < o.y+o.s && player.y+player.h > o.y) {
             state.lives--; obs.splice(i, 1);
-            if(state.lives <= 0) endGame();
+            if(state.lives <= 0) { state.playing = false; document.getElementById('overlay').style.display = 'flex'; }
             updateHUD();
         }
     });
 
-    // كوينز ماريو
-    if(Math.random() < 0.03) gold.push({ x: canvas.width, y: Math.random()*(canvas.height-50) });
+    if(Math.random() < 0.03) gold.push({ x: canvas.width, y: Math.random()*(canvas.height-30) });
     gold.forEach((g, i) => {
         g.x -= 5;
-        ctx.drawImage(img.coin, g.x, g.y, 40, 40);
-        if(Math.hypot(player.x+40-g.x, player.y+40-g.y) < 50) {
+        drawCoin(g.x, g.y, 30);
+        if(Math.hypot(player.x+30-g.x, player.y+15-g.y) < 40) {
             state.coins += 10; playSFX('coin'); gold.splice(i, 1); updateHUD();
         }
     });
@@ -134,12 +144,6 @@ function loop() {
 function updateHUD() {
     document.getElementById('coin-val').innerText = state.coins;
     document.getElementById('life-val').innerText = "❤️".repeat(state.lives);
-}
-
-function endGame() {
-    state.playing = false;
-    document.getElementById('overlay').style.display = 'flex';
-    document.querySelector('h1').innerText = "التهمتك الوحوش! 💀";
 }
 
 window.onmousedown = () => { if(state.playing) { player.v = player.j; playSFX('jump'); } };
