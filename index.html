@@ -3,48 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Himalaya: Cat Empire - Absolute Terror</title>
+    <title>Himalaya: Cat Revenge</title>
     <style>
-        :root { --gold: #FFD700; --blood: #ff0000; --neon-blue: #00f2ff; --dark-purple: #3a0050; }
+        :root { --gold: #FFD700; --blood: #ff0000; }
         * { box-sizing: border-box; touch-action: none; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Arial Black', Gadget, sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Arial', sans-serif; }
         
-        /* HUD - واجهة المعلومات */
-        #hud { position: fixed; top: 10px; width: 100%; display: flex; justify-content: space-around; z-index: 1000; pointer-events: none; }
-        .stat-badge { background: rgba(0,0,0,0.8); border: 2px solid var(--gold); color: white; padding: 8px 18px; border-radius: 30px; font-weight: bold; font-size: 1.1em; box-shadow: 0 0 15px rgba(255,215,0,0.3); }
+        /* واجهة اللعب */
+        #hud { position: fixed; top: 15px; width: 100%; display: flex; justify-content: space-around; z-index: 1000; }
+        .stat { background: rgba(0,0,0,0.85); border: 2px solid var(--gold); color: white; padding: 10px 20px; border-radius: 50px; font-weight: bold; box-shadow: 0 0 15px var(--gold); }
 
-        /* شاشة القوائم */
-        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
-        .royal-panel { background: linear-gradient(145deg, #1a1a1a, #0a0a0a); border: 3px solid var(--gold); border-radius: 35px; padding: 40px; text-align: center; color: white; width: 90%; max-width: 500px; box-shadow: 0 0 60px rgba(255,215,0,0.4); }
-        .royal-panel h1 { font-size: 2.8em; color: var(--gold); margin-bottom: 15px; text-shadow: 0 0 15px var(--gold); }
-        .royal-panel p { color: #ccc; font-size: 1.1em; line-height: 1.6; margin-bottom: 30px; }
-        .btn-start { background: var(--gold); color: black; border: none; padding: 18px 60px; font-size: 1.8em; font-weight: bold; border-radius: 50px; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 25px rgba(255,215,0,0.5); }
-        .btn-start:hover { transform: scale(1.05); }
-
-        /* تأثير البرق/الوميض */
-        #shock-flash { position: fixed; inset: 0; background: var(--blood); opacity: 0; pointer-events: none; z-index: 1500; transition: opacity 0.1s ease-out; }
-        /* شريط تقدم المرحلة */
-        #stage-progress { position: fixed; bottom: 0; left: 0; height: 8px; background: linear-gradient(90deg, var(--neon-blue), var(--gold)); width: 0%; transition: width 0.1s linear; }
-
-        canvas { display: block; filter: saturate(1.2); }
+        /* شاشة البداية */
+        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .card { background: #111; border: 3px solid var(--gold); border-radius: 30px; padding: 40px; text-align: center; color: white; width: 85%; max-width: 450px; }
+        .btn { background: var(--gold); color: black; border: none; padding: 15px 50px; font-size: 24px; font-weight: bold; border-radius: 50px; cursor: pointer; margin-top: 20px; }
+        
+        canvas { display: block; }
     </style>
 </head>
 <body>
 
-<div id="shock-flash"></div>
-<div id="stage-progress"></div>
-
 <div id="hud">
-    <div class="stat-badge">💰 <span id="coins-display">500</span></div>
-    <div class="stat-badge">👑 <span id="stage-display">المرحلة 1</span></div>
-    <div class="stat-badge">❤️ <span id="lives-display">❤️❤️❤️</span></div>
+    <div class="stat">💰 <span id="coin-val">520</span></div>
+    <div class="stat">🏰 <span id="stage-name">سرداب الغبار</span></div>
+    <div class="stat">❤️ <span id="life-val">❤️❤️❤️</span></div>
 </div>
 
 <div id="overlay">
-    <div class="royal-panel">
-        <h1 id="menu-title">عرش الظلال: إمبراطورية القطط</h1>
-        <p id="menu-description">ابدأ رحلتك في المرحلة <span id="current-stage-info">1</span>. ادفع <span id="entry-fee">10</span> كوينز لتواجه وحوش الظل وتكتشف كنوز الأسرار!</p>
-        <button class="btn-start" onclick="initGame()">دخول القصر الملعون 🐾</button>
+    <div class="card">
+        <h1 style="color:var(--gold);">إمبراطورية القطط 🐾</h1>
+        <p id="m-desc">المرحلة 1: ادفع 10 كوينز لمحاربة الوحوش!</p>
+        <button class="btn" onclick="startLevel()">دخول القصر 🔥</button>
     </div>
 </div>
 
@@ -53,330 +42,108 @@ const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 document.body.appendChild(canvas);
 
-// --- الأصول (الصور) ---
-const assets = {
-    cat: new Image(), coin: new Image(), shield: new Image(),
-    monsterTypes: [new Image(), new Image(), new Image(), new Image(), new Image()]
+// صور مضمونة (القطة والوحوش)
+const img = {
+    cat: new Image(),
+    monster: new Image(),
+    coin: new Image()
 };
-assets.cat.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png';
-assets.coin.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
-assets.shield.src = 'https://cdn-icons-png.flaticon.com/512/2807/2807494.png';
-assets.monsterTypes[0].src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png'; // غول الظل (مراحل 1-4)
-assets.monsterTypes[1].src = 'https://cdn-icons-png.flaticon.com/512/606/606795.png';  // خفاش الدماء (مراحل 5-9)
-assets.monsterTypes[2].src = 'https://cdn-icons-png.flaticon.com/512/1068/1068132.png'; // شبح الصدى (مراحل 10-14)
-assets.monsterTypes[3].src = 'https://cdn-icons-png.flaticon.com/512/865/865761.png';  // وحش الشبح الضخم (مراحل 15-19)
-assets.monsterTypes[4].src = 'https://cdn-icons-png.flaticon.com/512/4334/4334000.png'; // تنين الظلال (Boss - المرحلة 20)
+// صور مباشرة من أيقونات الألعاب لضمان عدم ظهور دراجات!
+img.cat.src = 'https://img.icons8.com/plasticine/200/cat.png'; 
+img.monster.src = 'https://img.icons8.com/flat-round/200/skull.png'; // وحش بشكل جمجمة مرعبة
+img.coin.src = 'https://img.icons8.com/color/100/coins.png';
 
-// --- محرك الصوت (ماريو + رعب) ---
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let state = { playing: false, stage: 1, coins: 520, lives: 3, dist: 0, target: 3000 };
+let player = { x: 50, y: 0, v: 0, g: 0.5, j: -10, w: 80, h: 80 };
+let obs = [], gold = [];
+
+// محرك أصوات ماريو
+const audio = new (window.AudioContext || window.webkitAudioContext)();
 function playSFX(type) {
-    if (audioContext.state === 'suspended') audioContext.resume();
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.connect(gain); gain.connect(audioContext.destination);
-
-    if (type === 'jump') { // Mario Jump
-        osc.frequency.setValueAtTime(150, audioContext.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.1);
-        osc.start(); osc.stop(audioContext.currentTime + 0.1);
-    } else if (type === 'coin') { // Mario Coin
-        osc.frequency.setValueAtTime(987, audioContext.currentTime);
-        osc.frequency.setValueAtTime(1318, audioContext.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.3);
-        osc.start(); osc.stop(audioContext.currentTime + 0.3);
-    } else if (type === 'hit') { // Horror Hit
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(120, audioContext.currentTime);
-        osc.frequency.linearRampToValueAtTime(30, audioContext.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.2);
-        osc.start(); osc.stop(audioContext.currentTime + 0.2);
-    } else if (type === 'boss_hit') { // Boss Hit Sound
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(80, audioContext.currentTime);
-        osc.frequency.linearRampToValueAtTime(20, audioContext.currentTime + 0.4);
-        gain.gain.setValueAtTime(0.5, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.4);
-        osc.start(); osc.stop(audioContext.currentTime + 0.4);
-    } else if (type === 'rage_on') { // Rage Mode Activation
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(440, audioContext.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.2, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.1);
-        osc.start(); osc.stop(audioContext.currentTime + 0.1);
+    if(audio.state === 'suspended') audio.resume();
+    const osc = audio.createOscillator();
+    const g = audio.createGain();
+    osc.connect(g); g.connect(audio.destination);
+    if(type === 'jump') {
+        osc.frequency.setValueAtTime(150, audio.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, audio.currentTime + 0.1);
+        g.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + 0.1);
+        osc.start(); osc.stop(audio.currentTime + 0.1);
+    } else if(type === 'coin') {
+        osc.frequency.setValueAtTime(987, audio.currentTime);
+        osc.frequency.setValueAtTime(1318, audio.currentTime + 0.08);
+        g.gain.setValueAtTime(0.1, audio.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + 0.3);
+        osc.start(); osc.stop(audio.currentTime + 0.3);
     }
 }
 
-// --- حالة اللعبة الرئيسية ---
-let game = {
-    playing: false,
-    stage: 1,
-    coins: 500,
-    lives: 3,
-    distance: 0,
-    targetDistance: 5000,
-    catRage: 0, // وضع الغضب
-    shieldActive: false,
-    comboCount: 0, // عداد للكومبو لتفعيل الغضب
-    bossHealth: 0, // صحة البوس
-    levelNames: ["سرداب الغبار", "غابة الأرواح", "كهوف الصدى", "عالم الظلال", "عرش التنين"]
-};
-let player = { x: 0, y: 0, velocity: 0, gravity: 0.5, jumpPower: -10, width: 85, height: 85 };
-let entities = { monsters: [], items: [], shadows: [] }; // الظلال للوحوش
-
-function resizeGame() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+function resize() {
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     player.x = canvas.width * 0.15;
-    player.y = canvas.height / 2;
 }
-window.onresize = resizeGame;
-resizeGame();
+window.onresize = resize; resize();
 
-// --- وظائف مساعدة للرسومات والتأثيرات ---
-function flashScreen() {
-    document.getElementById('shock-flash').style.opacity = 1;
-    setTimeout(() => document.getElementById('shock-flash').style.opacity = 0, 100);
+function startLevel() {
+    state.playing = true; state.dist = 0; state.lives = 3;
+    obs = []; gold = [];
+    player.y = canvas.height / 2;
+    document.getElementById('overlay').style.display = 'none';
+    loop();
+}
+
+function loop() {
+    if(!state.playing) return;
+    
+    // خلفية رعب داكنة
+    ctx.fillStyle = '#050505'; ctx.fillRect(0,0,canvas.width, canvas.height);
+    
+    // تحريك القطة
+    player.v += player.g; player.y += player.v;
+    if(player.y > canvas.height - player.h) player.y = canvas.height - player.h;
+    if(player.y < 0) player.y = 0;
+    ctx.drawImage(img.cat, player.x, player.y, player.w, player.h);
+
+    // توليد الوحوش (تأكد من شكل الجمجمة أو الوحش)
+    if(Math.random() < 0.02) {
+        obs.push({ x: canvas.width, y: Math.random()*(canvas.height-80), s: 90 });
+    }
+    obs.forEach((o, i) => {
+        o.x -= 7;
+        ctx.drawImage(img.monster, o.x, o.y, o.s, o.s);
+        if(player.x < o.x+o.s-20 && player.x+player.w > o.x+20 && player.y < o.y+o.s-20 && player.y+player.h > o.y+20) {
+            state.lives--; obs.splice(i, 1);
+            if(state.lives <= 0) endGame();
+            updateHUD();
+        }
+    });
+
+    // كوينز ماريو
+    if(Math.random() < 0.03) gold.push({ x: canvas.width, y: Math.random()*(canvas.height-50) });
+    gold.forEach((g, i) => {
+        g.x -= 5;
+        ctx.drawImage(img.coin, g.x, g.y, 40, 40);
+        if(Math.hypot(player.x+40-g.x, player.y+40-g.y) < 50) {
+            state.coins += 10; playSFX('coin'); gold.splice(i, 1); updateHUD();
+        }
+    });
+
+    requestAnimationFrame(loop);
 }
 
 function updateHUD() {
-    document.getElementById('coins-display').innerText = game.coins;
-    document.getElementById('stage-display').innerText = game.levelNames[Math.min(game.levelNames.length - 1, Math.floor((game.stage - 1) / 4))];
-    document.getElementById('lives-display').innerText = "❤️".repeat(game.lives);
-    document.getElementById('stage-progress').style.width = (game.distance / game.targetDistance * 100) + "%";
+    document.getElementById('coin-val').innerText = state.coins;
+    document.getElementById('life-val').innerText = "❤️".repeat(state.lives);
 }
 
-// --- بدء اللعبة / المرحلة ---
-function initGame() {
-    const entryFee = 10;
-    if (game.coins < entryFee) {
-        alert("لا تملك الكوينز الكافية لدخول هذه المرحلة!");
-        return;
-    }
-    game.coins -= entryFee;
-    game.playing = true;
-    game.distance = 0;
-    game.lives = 3;
-    game.catRage = 0;
-    game.shieldActive = false;
-    game.comboCount = 0;
-    game.targetDistance = 3000 + (game.stage * 1000); // كل مرحلة أطول
-    game.bossHealth = game.stage === 20 ? 3 : 0; // البوس يحتاج 3 ضربات
-    entities = { monsters: [], items: [], shadows: [] };
-    player.y = canvas.height / 2;
-
-    document.getElementById('overlay').style.display = 'none';
-    updateHUD();
-    gameLoop();
-}
-
-// --- حلقة اللعبة الرئيسية ---
-function gameLoop() {
-    if (!game.playing) return;
-
-    // تحديث فيزياء اللاعب
-    player.velocity += player.gravity;
-    player.y += player.velocity;
-    if (player.y > canvas.height - player.height) player.y = canvas.height - player.height;
-    if (player.y < 0) player.y = 0;
-
-    game.distance += (5 + game.stage * 0.5); // سرعة اللعبة
-
-    // تلوين الخلفية حسب العالم
-    const worldIndex = Math.min(game.levelNames.length - 1, Math.floor((game.stage - 1) / 4));
-    const baseHue = worldIndex * 60;
-    ctx.fillStyle = `hsl(${baseHue}, 15%, 8%)`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // تأثيرات ضوئية خفيفة للخلفية
-    ctx.fillStyle = `rgba(255,255,255,0.02)`;
-    for (let i = 0; i < 5; i++) {
-        const xOffset = (i * 400 - (game.distance % 400));
-        ctx.fillRect(xOffset + 50, 0, 100, canvas.height);
-    }
-
-    // --- توليد الوحوش ---
-    let monsterSpawnRate = game.stage === 20 ? 0.008 : (0.015 + (game.stage * 0.002));
-    if (Math.random() < monsterSpawnRate) {
-        let monsterSize = game.stage === 20 ? 250 : (80 + (game.stage * 2));
-        let monsterTypeIndex = worldIndex;
-        if (game.stage === 20) monsterTypeIndex = 4; // Boss type
-        entities.monsters.push({
-            x: canvas.width,
-            y: Math.random() * (canvas.height - monsterSize),
-            width: monsterSize,
-            height: monsterSize,
-            speed: 6 + (game.stage * 0.8),
-            type: monsterTypeIndex
-        });
-    }
-
-    // --- تحديث ورسم الوحوش ---
-    for (let i = entities.monsters.length - 1; i >= 0; i--) {
-        const monster = entities.monsters[i];
-        monster.x -= monster.speed;
-
-        // ذكاء الوحوش (تلاحق القطة)
-        if (game.stage > 8 && monster.x < canvas.width * 0.7) {
-            if (player.y < monster.y) monster.y -= 1.5;
-            else monster.y += 1.5;
-        }
-
-        // رسم الوحش وظله المتحرك
-        ctx.save();
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = monster.type === 4 ? varColor('--blood') : 'rgba(0,0,0,0.8)';
-        ctx.drawImage(assets.monsterTypes[monster.type], monster.x, monster.y, monster.width, monster.height);
-        ctx.restore();
-
-        // توليد الظلال المتحركة للوحوش المتطورة
-        if (game.stage >= 10 && Math.random() < 0.3) {
-            entities.shadows.push({
-                x: monster.x + (Math.random() - 0.5) * 20,
-                y: monster.y + monster.height * 0.8,
-                size: monster.width * 0.7,
-                alpha: 0.5,
-                life: 30
-            });
-        }
-
-        // تصادم
-        if (checkCollision(player, monster)) {
-            if (game.catRage > 0) { // وضع الغضب يقتل الوحوش
-                entities.monsters.splice(i, 1);
-                game.coins += 20;
-                playSFX('coin');
-            } else if (game.shieldActive) { // الدرع يحمي ضربة واحدة
-                game.shieldActive = false;
-                entities.monsters.splice(i, 1);
-                flashScreen();
-                playSFX('hit');
-            } else {
-                game.lives--;
-                entities.monsters.splice(i, 1);
-                flashScreen();
-                playSFX('hit');
-                if (game.lives <= 0) finishGame(false);
-            }
-        }
-        if (monster.x + monster.width < 0) entities.monsters.splice(i, 1); // إزالة الوحوش خارج الشاشة
-    }
-    
-    // --- تحديث ورسم الظلال ---
-    for (let i = entities.shadows.length - 1; i >= 0; i--) {
-        const shadow = entities.shadows[i];
-        shadow.life--;
-        shadow.x -= 3; // الظلال تنجرف قليلا
-        shadow.alpha = shadow.life / 30; // تتلاشى
-        ctx.globalAlpha = shadow.alpha;
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.beginPath();
-        ctx.ellipse(shadow.x, shadow.y, shadow.size / 2, shadow.size / 4, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        if (shadow.life <= 0) entities.shadows.splice(i, 1);
-    }
-
-    // --- توليد العناصر (كوينز ودروع) ---
-    if (Math.random() < 0.03) { // كوينز
-        entities.items.push({ x: canvas.width, y: Math.random() * (canvas.height - 50), width: 45, height: 45, type: 'coin' });
-    }
-    if (Math.random() < 0.005 && !game.shieldActive) { // درع نادر
-        entities.items.push({ x: canvas.width, y: Math.random() * (canvas.height - 50), width: 45, height: 45, type: 'shield' });
-    }
-
-    // --- تحديث ورسم العناصر ---
-    for (let i = entities.items.length - 1; i >= 0; i--) {
-        const item = entities.items[i];
-        item.x -= 5;
-        ctx.drawImage(item.type === 'coin' ? assets.coin : assets.shield, item.x, item.y, item.width, item.height);
-
-        if (checkCollision(player, item)) {
-            if (item.type === 'coin') {
-                game.coins += 10;
-                game.comboCount++;
-                if (game.comboCount >= 5) { // تفعيل وضع الغضب
-                    game.catRage = 200; // 200 فريم = حوالي 3 ثواني
-                    game.comboCount = 0;
-                    playSFX('rage_on');
-                }
-                playSFX('coin');
-            } else if (item.type === 'shield') {
-                game.shieldActive = true;
-                playSFX('coin'); // صوت جمع مميز
-            }
-            entities.items.splice(i, 1);
-        }
-        if (item.x + item.width < 0) entities.items.splice(i, 1);
-    }
-
-    // تحديث وضع الغضب
-    if (game.catRage > 0) game.catRage--;
-
-    // فحص الفوز بالمرحلة
-    if (game.distance >= game.targetDistance) finishGame(true);
-    else requestAnimationFrame(gameLoop);
-
-    updateHUD();
-}
-
-// --- فحص التصادم ---
-function checkCollision(obj1, obj2) {
-    return obj1.x < obj2.x + obj2.width &&
-           obj1.x + obj1.width > obj2.x &&
-           obj1.y < obj2.y + obj2.height &&
-           obj1.y + obj1.height > obj2.y;
-}
-
-// --- إنهاء اللعبة / المرحلة ---
-function finishGame(win) {
-    game.playing = false;
+function endGame() {
+    state.playing = false;
     document.getElementById('overlay').style.display = 'flex';
-    const title = document.getElementById('menu-title');
-    const description = document.getElementById('menu-description');
-    const currentStageInfo = document.getElementById('current-stage-info');
-    const entryFeeDisplay = document.getElementById('entry-fee');
-    const rewardBox = document.getElementById('reward-box');
-
-    if (win) {
-        if (game.stage === 20) {
-            title.innerText = "تهانينا! أنت ملك الهيمالايا! 👑";
-            description.innerText = "لقد هزمت عرش الظلال بالكامل وأصبحت الأسطورة الخالدة!";
-            rewardBox.style.display = 'block'; rewardBox.innerText = "🎁 جائزة الأبطال: +500 كوينز!";
-            game.coins += 500;
-            game.stage = 1; // إعادة اللعبة من البداية بعد الفوز الكبير
-        } else {
-            title.innerText = `النصر! المرحلة ${game.stage} اكتملت! 🎉`;
-            description.innerText = "استعد للمرحلة التالية. الوحوش أصبحت أقوى!";
-            if (game.stage % 4 === 0) { // جائزة كل 4 مراحل
-                rewardBox.style.display = 'block'; rewardBox.innerText = `🎁 جائزة العالم: +${50 * game.stage} كوينز!`;
-                game.coins += (50 * game.stage);
-            } else { rewardBox.style.display = 'none'; }
-            game.stage++;
-        }
-    } else {
-        title.innerText = "لقد قتلتك الوحوش! 💀";
-        description.innerText = "خسرت رهانك. هل تجرؤ على المحاولة مجدداً؟";
-        rewardBox.style.display = 'none';
-    }
-
-    currentStageInfo.innerText = game.stage;
-    entryFeeDisplay.innerText = 10; // رسوم الدخول ثابتة
-    updateHUD();
+    document.querySelector('h1').innerText = "التهمتك الوحوش! 💀";
 }
 
-// --- التحكم بالقفز ---
-function handleJump() {
-    if (game.playing) {
-        player.velocity = player.jumpPower;
-        playSFX('jump');
-    }
-}
-window.onmousedown = handleJump;
-window.ontouchstart = (e) => { e.preventDefault(); handleJump(); };
+window.onmousedown = () => { if(state.playing) { player.v = player.j; playSFX('jump'); } };
+window.ontouchstart = (e) => { e.preventDefault(); if(state.playing) { player.v = player.j; playSFX('jump'); } };
 </script>
 </body>
 </html>
