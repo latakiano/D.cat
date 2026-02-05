@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Himalaya Cat: The Odyssey</title>
+    <style>
+        :root { --gold: #FFD700; --red: #ff3131; --cyan: #00f2ff; --bg-dark: #000; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg-dark); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+
+        /* HUD - Top Bar */
+        #top-ui { position: fixed; top: 15px; width: 100%; z-index: 1000; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        #progress-wrap { width: 70%; max-width: 500px; height: 14px; background: rgba(255,255,255,0.1); border-radius: 20px; border: 2px solid var(--gold); overflow: hidden; box-shadow: 0 0 15px rgba(255,215,0,0.3); }
+        #progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #ff8c00, var(--gold)); transition: 0.2s; }
+        #stats { display: flex; gap: 30px; color: var(--gold); font-weight: bold; font-size: 18px; text-shadow: 2px 2px #000; }
+        #health-bar { width: 100px; height: 10px; background: #555; border-radius: 5px; overflow: hidden; border: 1px solid white; margin-top: 5px; }
+        #health-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #00f2ff, #00c0ff); transition: width 0.3s; }
+
+        /* Pause Button */
+        #pause-btn { position: fixed; top: 15px; right: 15px; z-index: 1001; background: rgba(255,255,255,0.1); border: 2px solid var(--gold); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--gold); cursor: pointer; }
+
+        /* Main Menu / Pause Menu */
+        #menu { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+        .window { background: linear-gradient(145deg, #151530, #000); padding: 30px; border-radius: 40px; border: 3px solid var(--gold); text-align: center; width: 100%; max-width: 550px; box-shadow: 0 0 70px rgba(0,0,0,1); }
+        .shop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; max-height: 200px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 20px; border: 1px solid #333; }
+        
+        .card { background: #1a1a1a; padding: 12px; border-radius: 15px; border: 2px solid #333; cursor: pointer; color: #555; position: relative; transition: 0.3s; font-size: 12px; font-weight: bold; }
+        .card.open { color: #fff; border-color: #555; }
+        .card.active { border-color: var(--gold); background: #2a2200; box-shadow: 0 0 15px var(--gold); color: var(--gold); transform: scale(1.05); }
+        .card.locked::after { content: '🔒'; position: absolute; top: -5px; right: -5px; font-size: 12px; }
+
+        .cat-skins { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .skin-option { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #555; cursor: pointer; transition: 0.2s; }
+        .skin-option.active { border-color: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+
+        .btn-main { background: var(--gold); color: #000; padding: 18px 60px; border-radius: 50px; border: none; font-size: 24px; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.2s; }
+        .btn-main:active { transform: scale(0.95); }
+        .btn-donate { background: var(--red); color: white; padding: 8px 25px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
+
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+
+<div id="top-ui">
+    <div id="stats">
+        <div>💰 <span id="coin-txt">0</span></div>
+        <div>📍 متجر <span id="stage-txt">1</span></div>
+        <div id="health-bar"><div id="health-fill"></div></div>
+    </div>
+    <div id="progress-wrap"><div id="progress-fill"></div></div>
+</div>
+
+<div id="pause-btn" onclick="togglePause()">II</div>
+
+<div id="menu">
+    <div class="window">
+        <h1 id="m-title" style="color:var(--gold); margin:0; font-size: 32px;">مغامرة الهيمالايا الكبرى</h1>
+        <p id="m-desc" style="color:#aaa; font-size:16px; margin-top:10px;">انطلق في رحلة عبر الكهوف الأسطورية واجمع الكنوز!</p>
+        
+        <div class="shop-grid" id="grid"></div>
+
+        <div class="cat-skins">
+            <div class="skin-option active" style="background-color:#964B00;" data-color="#964B00" onclick="selectSkin(this, '#964B00')"></div>
+            <div class="skin-option" style="background-color:#808080;" data-color="#808080" onclick="selectSkin(this, '#808080')"></div>
+            <div class="skin-option" style="background-color:#ADD8E6;" data-color="#ADD8E6" onclick="selectSkin(this, '#ADD8E6')"></div>
+            <div class="skin-option" style="background-color:#7B68EE;" data-color="#7B68EE" onclick="selectSkin(this, '#7B68EE')"></div>
+        </div>
+
+        <div style="background:rgba(255,49,49,0.1); padding:15px; border-radius:25px; border:1px dashed var(--red); margin-top: 25px;">
+            <p style="margin:0; font-size:14px; color:#fff;">تبرع $1 لإنقاذ أرواح القطط</p>
+            <button class="btn-donate" onclick="donation()">تبرع الآن ❤️</button>
+        </div>
+        
+        <button class="btn-main" onclick="startPlay()">انطلق 🚀</button>
+    </div>
+</div>
+
+<script>
+const cvs = document.createElement('canvas');
+document.body.appendChild(cvs);
+const ctx = cvs.getContext('2d');
+
+// Game Assets (Images)
+const imgC = new Image(); imgC.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png'; 
+const imgG = new Image(); imgG.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png'; 
+const imgM = new Image(); imgM.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png'; 
+const imgJ = new Image(); imgJ.src = 'https://cdn-icons-png.flaticon.com/512/616/616430.png';  
+
+// Game State Variables
+let playing = false, paused = false, stage = 1, unlocked = 1, score = 0, dist = 0, frame = 0, portalX = -1;
+let obstacles = [], goldCoins = [], gems = [], particles = [];
+let player = { x: 0, y: 0, v: 0, g: 0.48, j: -9.8, w: 75, h: 65, health: 100, maxHealth: 100, color: '#964B00' };
+
+// Audio Context (for sound effects)
+const audio = new (window.AudioContext || window.webkitAudioContext)();
+function sfx(f, t, d) {
+    if(audio.state === 'suspended') audio.resume();
+    let o = audio.createOscillator(), g = audio.createGain();
+    o.type = t; o.frequency.setValueAtTime(f, audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + d);
+    o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + d);
+}
+
+// Canvas Resizing
+function resize() {
+    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+    player.x = cvs.width * 0.15;
+}
+window.onresize = resize; resize();
+
+// Shop Grid Management
+function drawShopGrid() {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    for(let i=1; i<=20; i++) {
+        const d = document.createElement('div');
+        let state = i <= unlocked ? 'open' : 'locked';
+        d.className = `card ${state} ${i==stage?'active':''}`;
+        d.innerHTML = `متجر ${i}<br>$0.99`;
+        if(state === 'open') d.onclick = () => { stage = i; drawShopGrid(); sfx(400,'sine',0.1); };
+        grid.appendChild(d);
+    }
+}
+drawShopGrid();
+
+// Cat Skin Selection
+function selectSkin(element, color) {
+    document.querySelectorAll('.skin-option').forEach(opt => opt.classList.remove('active'));
+    element.classList.add('active');
+    player.color = color;
+    sfx(500, 'triangle', 0.1);
+}
+
+function donation() { sfx(200,'sawtooth',0.3); alert('شكراً لشهامتك! تم تسجيل تبرعك في كهف الخير ❤️'); }
+
+function startPlay() {
+    playing = true; paused = false; dist = 0; obstacles = []; goldCoins = []; gems = []; particles = []; frame = 0; portalX = -1;
+    player.y = cvs.height / 2; player.v = 0; player.health = player.maxHealth;
+    document.getElementById('menu').style.opacity = '0';
+    setTimeout(() => document.getElementById('menu').style.display = 'none', 400);
+    sfx(150, 'square', 0.5);
+    loop();
+}
+
+function togglePause() {
+    paused = !paused;
+    const menu = document.getElementById('menu');
+    const mainTitle = document.getElementById('m-title');
+    const mainDesc = document.getElementById('m-desc');
+
+    if (paused) {
+        mainTitle.innerText = "اللعب متوقف";
+        mainDesc.innerText = "اضغط 'انطلق' للمتابعة.";
+        menu.style.display = 'flex';
+        setTimeout(() => menu.style.opacity = '1', 50);
+    } else {
+        menu.style.opacity = '0';
+        setTimeout(() => menu.style.display = 'none', 400);
+        loop(); // Resume game loop
+    }
+}
+
+// Particle System
+function spawnParticles(x, y, color, count = 8, spread = 10) {
+    for(let i=0; i<count; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random()-0.5) * spread,
+            vy: (Math.random()-0.5) * spread,
+            alpha: 1,
+            color: color
+        });
+    }
+}
+
+// Main Game Loop
+function loop() {
+    if(!playing || paused) return;
+
+    frame++; 
+    if(portalX === -1) dist += 1.8; // Game speed
+
+    // Update HUD
+    let targetDistance = 2500; 
+    let progress = Math.min(100, (dist / targetDistance) * 100);
+    document.getElementById('progress-fill').style.width = progress + '%';
+    document.getElementById('coin-txt').innerText = score;
+    document.getElementById('stage-txt').innerText = stage;
+    document.getElementById('health-fill').style.width = player.health + '%';
+
+    // Background (Parallax effect & gradient)
+    let bgColor = stage === 20 ? '#100020' : '#050510';
+    ctx.fillStyle = bgColor; ctx.fillRect(0,0,cvs.width, cvs.height);
+
+    // Dynamic Cave Walls (Wave effect)
+    let wallBaseHeight = (cvs.height * 0.18);
+    ctx.fillStyle = `hsla(${stage * 45}, 80%, 12%, 1)`;
+    for(let x=0; x<cvs.width; x+=4) {
+        let wave = Math.sin((x + frame*8) * 0.012) * 25; // More intense wave
+        ctx.fillRect(x, 0, 5, wallBaseHeight + wave);
+        ctx.fillRect(x, cvs.height - (wallBaseHeight + wave), 5, wallBaseHeight + wave);
+    }
+
+    // Player (Cat) movement and drawing
+    player.v += player.g; player.y += player.v;
+    
+    ctx.save();
+    ctx.translate(player.x + player.w/2, player.y + player.h/2);
+    ctx.scale(-1, 1); 
+    ctx.rotate(player.v * 0.04); // Rotate based on vertical velocity
+    
+    // Draw Cat with selected skin color
+    ctx.filter = `drop-shadow(0 0 5px ${player.color})`; // Glow effect
+    ctx.drawImage(imgC, -player.w/2, -player.h/2, player.w, player.h);
+    ctx.filter = 'none'; // Reset filter
+
+    ctx.restore();
+
+    // Particles Update & Draw
+    particles.forEach((p, i) => {
+        p.x += p.vx; p.y += p.vy; p.alpha -= 0.03;
+        ctx.fillStyle = `rgba(${p.color}, ${p.alpha})`;
+        ctx.fillRect(p.x, p.y, 4, 4);
+        if(p.alpha <= 0) particles.splice(i, 1);
+    });
+
+    // Gold Coins
+    if(frame % 70 == 0 && portalX === -1) goldCoins.push({x: cvs.width, y: wallBaseHeight + 60 + Math.random()*(cvs.height - wallBaseHeight*2 - 120)});
+    goldCoins.forEach((g, i) => {
+        g.x -= 6; 
+        ctx.drawImage(imgG, g.x, g.y, 38, 38);
+        if(checkCollision(player, g, 35)) { 
+            spawnParticles(g.x, g.y, "255, 215, 0", 10, 8);
+            goldCoins.splice(i,1); score += 5; sfx(900, 'sine', 0.1); 
+        }
+    });
+
+    // Gems (Special rewards)
+    if(frame % 450 == 0 && portalX === -1) gems.push({x: cvs.width, y: cvs.height/2 + (Math.random()-0.5)*100});
+    gems.forEach((j, i) => {
+        j.x -= 7; 
+        ctx.drawImage(imgJ, j.x, j.y, 45, 45);
+        if(checkCollision(player, j, 40)) { 
+            spawnParticles(j.x, j.y, "0, 242, 255", 15, 12);
+            gems.splice(i,1); score += 50; sfx(1200, 'triangle', 0.2); 
+        }
+    });
+
+    // Obstacles (Monsters)
+    if(frame > 80 && frame % Math.max(25, 85 - stage*3) == 0 && portalX === -1) {
+        obstacles.push({x: cvs.width, y: wallBaseHeight + 40 + Math.random()*(cvs.height - wallBaseHeight*2 - 80), s: 72, frame: 0});
+    }
+    obstacles.forEach((o, i) => {
+        o.x -= (7 + stage*0.6); 
+        // Simple animation/pulse for monster
+        let pulse = Math.sin(o.frame++ * 0.1) * 5;
+        ctx.drawImage(imgM, o.x, o.y + pulse, o.s, o.s);
+        
+        if(checkCollision(player, o, 50)) { 
+            player.health -= 25; // Lose health on hit
+            spawnParticles(o.x, o.y, "255, 49, 49", 20, 15);
+            sfx(100, 'sawtooth', 0.2);
+            if (player.health <= 0) endGame(false);
+            obstacles.splice(i, 1); // Remove obstacle after hit
+        }
+        if(o.x < -100) obstacles.splice(i, 1);
+    });
+
+    // Cave Portal (End of stage)
+    if(prog >= 100 && portalX === -1) portalX = cvs.width;
+    if(portalX > -1) {
+        portalX -= 6;
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.ellipse(portalX, cvs.height/2, 120, 240, 0, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = getPortalColor(); ctx.lineWidth = 8; ctx.stroke();
+        if(player.x > portalX - 50) endGame(true);
+    }
+
+    // Wall Collision (instant death for now)
+    if(player.y < wallBaseHeight - 15 || player.y > cvs.height - wallBaseHeight - player.h + 15) endGame(false);
+    
+    requestAnimationFrame(loop);
+}
+
+// Simple AABB Collision Detection (Axis-Aligned Bounding Box)
+function checkCollision(obj1, obj2, buffer = 0) {
+    return obj1.x + buffer < obj2.x + obj2.s - buffer &&
+           obj1.x + obj1.w - buffer > obj2.x + buffer &&
+           obj1.y + buffer < obj2.y + obj2.s - buffer &&
+           obj1.y + obj1.h - buffer > obj2.y + buffer;
+}
+
+function getPortalColor() { return stage === 20 ? 'var(--cyan)' : 'var(--gold)'; }
+
+function endGame(win) {
+    playing = false;
+    sfx(win ? 1000 : 80, win ? 'square' : 'sawtooth', 0.6);
+    const title = document.getElementById('m-title');
+    const desc = document.getElementById('m-desc');
+    
+    if(win) {
+        if(stage === unlocked) unlocked++;
+        if(stage === 20) {
+            title.innerText = "🌈 كهف أحلام القطة!";
+            desc.innerText = "أنت أسطورة! لقد وصلت لآخر الكهوف وجمعت كل الكنوز الممكنة.";
+        } else {
+            title.innerText = "تم اختراق الكهف!";
+            desc.innerText = `رائع! متجر ${stage+1} متاح الآن للمغامرة.`;
+            stage++;
+        }
+    } else {
+        title.innerText = "سقطت القطة!";
+        desc.innerText = "الدهاليز كانت عميقة جداً، حاول مجدداً واجمع المزيد من الذهب.";
+    }
+    
+    drawShopGrid();
+    const menu = document.getElementById('menu');
+    menu.style.display = 'flex';
+    setTimeout(() => menu.style.opacity = '1', 50);
+}
+
+// Input Handling
+const jump = (e) => { 
+    if(playing && !paused) { player.v = player.j; sfx(650, 'triangle', 0.08); } 
+    if(e) e.preventDefault(); 
+};
+window.addEventListener('mousedown', jump);
+window.addEventListener('touchstart', jump, {passive: false});
+
+// Ensure all images are loaded before starting
+window.onload = () => {
+    Promise.all([
+        new Promise(resolve => imgC.onload = resolve),
+        new Promise(resolve => imgG.onload = resolve),
+        new Promise(resolve => imgM.onload = resolve),
+        new Promise(resolve => imgJ.onload = resolve)
+    ]).then(() => {
+        document.getElementById('menu').style.opacity = '1';
+    });
+};
+</script>
+</body>
+</html>
