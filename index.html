@@ -3,79 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Himalaya Cat: Eternal Dream</title>
+    <title>Himalaya Legend: Palace Escape</title>
     <style>
-        :root { --gold: #FFD700; --neon-blue: #00f2ff; --neon-pink: #ff00ea; --red: #ff3131; }
+        :root { --gold: #FFD700; --red: #ff3131; --marble: #e0e0e0; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a0a00; font-family: 'Segoe UI', Tahoma, sans-serif; }
 
-        /* شريط التقدم السينمائي */
-        #ui-layer { position: fixed; top: 0; width: 100%; padding: 20px; z-index: 1000; pointer-events: none; }
-        #progress-container { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,215,0,0.3); }
-        #progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-blue), var(--gold)); box-shadow: 0 0 15px var(--gold); transition: 0.3s; }
+        /* واجهة المستخدم العلوية */
+        #hud { position: fixed; top: 15px; width: 100%; z-index: 1000; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+        #prog-bg { width: 70%; height: 12px; background: rgba(0,0,0,0.6); border-radius: 10px; border: 2px solid var(--gold); overflow: hidden; }
+        #prog-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ffa500, var(--gold)); transition: 0.1s; box-shadow: 0 0 10px var(--gold); }
+        #info { display: flex; gap: 40px; color: var(--gold); font-weight: bold; font-size: 20px; margin-top: 10px; text-shadow: 2px 2px #000; }
+
+        /* القائمة الملكية */
+        #menu { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .palace-window { background: linear-gradient(135deg, #2c1a05, #000); padding: 40px; border-radius: 30px; border: 4px double var(--gold); text-align: center; width: 90%; max-width: 500px; box-shadow: 0 0 50px #000; }
         
-        #stats-bar { display: flex; justify-content: space-between; margin-top: 10px; color: #fff; font-weight: bold; font-size: 16px; text-shadow: 0 0 10px #000; }
-        .stat-item { background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; border: 1px solid var(--gold); }
+        .stage-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 25px 0; max-height: 200px; overflow-y: auto; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 15px; }
+        .btn-stage { background: #1a1100; padding: 15px; border-radius: 12px; border: 1px solid #444; color: #666; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .btn-stage.open { color: #fff; border-color: #888; }
+        .btn-stage.active { background: var(--gold); color: #000; box-shadow: 0 0 15px var(--gold); transform: scale(1.05); }
 
-        /* القائمة الاحترافية */
-        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); transition: 0.5s; }
-        .panel { background: linear-gradient(145deg, #0a0a20, #000); padding: 30px; border-radius: 40px; border: 2px solid var(--gold); text-align: center; width: 90%; max-width: 500px; box-shadow: 0 0 50px rgba(255,215,0,0.2); }
+        .btn-start { background: var(--gold); color: #000; width: 100%; padding: 18px; border-radius: 50px; border: none; font-size: 24px; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
         
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; max-height: 180px; overflow-y: auto; padding: 10px; }
-        .node { background: #111; padding: 12px; border-radius: 15px; border: 1px solid #333; cursor: pointer; color: #444; transition: 0.3s; font-size: 11px; }
-        .node.unlocked { color: #fff; border-color: #555; }
-        .node.active { background: var(--gold); color: #000; box-shadow: 0 0 20px var(--gold); transform: scale(1.1); }
-        .node.locked::after { content: '🔒'; display: block; font-size: 10px; }
-
-        .btn-play { background: var(--gold); color: #000; width: 100%; padding: 15px; border-radius: 50px; border: none; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 0 20px rgba(255,215,0,0.4); }
-        .btn-play:active { transform: scale(0.95); }
-
-        canvas { display: block; }
+        canvas { display: block; background: #000; }
     </style>
 </head>
 <body>
 
-<div id="ui-layer">
-    <div id="progress-container"><div id="progress-bar"></div></div>
-    <div id="stats-bar">
-        <div class="stat-item">💰 <span id="c-count">0</span></div>
-        <div class="stat-item">📍 متجر <span id="s-count">1</span></div>
-        <div class="stat-item" style="border-color:var(--neon-blue)">❤️ <span id="h-count">100</span></div>
+<div id="hud">
+    <div id="prog-bg"><div id="prog-bar"></div></div>
+    <div id="info">
+        <div>💎 <span id="coins">0</span></div>
+        <div>🏰 متجر <span id="current-stage">1</span></div>
     </div>
 </div>
 
-<div id="overlay">
-    <div class="panel">
-        <h1 id="title" style="color:var(--gold); margin:0;">أساطير الهيمالايا</h1>
-        <div class="grid" id="grid"></div>
-        <div style="padding: 15px; border: 1px dashed var(--red); border-radius: 20px;">
-            <p style="color:#eee; font-size:12px; margin:0;">دعم ملاجئ القطط ($1)</p>
-            <button onclick="sfx(200,'sine',0.2)" style="background:var(--red); border:none; color:white; padding:5px 15px; border-radius:10px; margin-top:5px; cursor:pointer;">تبرع</button>
-        </div>
-        <button class="btn-play" onclick="initGame()">دخول الكهف 🚀</button>
+<div id="menu">
+    <div class="palace-window">
+        <h1 id="m-title" style="color:var(--gold); margin:0; font-size: 32px; text-shadow: 2px 2px #000;">هروب قصر الهيمالايا</h1>
+        <p id="m-desc" style="color:#ccc; margin-top:10px;">اجتز أروقة القصر الملكي واحذر الحراس!</p>
+        <div class="stage-grid" id="stage-grid"></div>
+        <button class="btn-start" onclick="startGame()">اقتحم القصر 🐾</button>
     </div>
 </div>
 
 <script>
-const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
-document.body.appendChild(canvas);
+const cvs = document.createElement('canvas');
+const ctx = cvs.getContext('2d');
+document.body.appendChild(cvs);
 
-// الموارد الرسومية
-const imgs = {
-    cat: new Image(), coin: new Image(), monster: new Image(), gem: new Image()
-};
-imgs.cat.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png';
-imgs.coin.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
-imgs.monster.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png';
-imgs.gem.src = 'https://cdn-icons-png.flaticon.com/512/616/616430.png';
+// الأصول (الصور)
+const imgCat = new Image(); imgCat.src = 'https://cdn-icons-png.flaticon.com/512/616/616408.png'; // قطة تنظر للأمام
+const imgGold = new Image(); imgGold.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
+const imgMonster = new Image(); imgMonster.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png'; // وجه وحش
+const imgGem = new Image(); imgGem.src = 'https://cdn-icons-png.flaticon.com/512/616/616430.png';
 
-let state = { playing: false, stage: 1, unlocked: 1, score: 0, health: 100, dist: 0, frame: 0, portal: -1 };
-let entities = { obs: [], gold: [], gems: [], fx: [] };
-let cat = { x: 0, y: 0, v: 0, g: 0.48, j: -9.5, w: 75, h: 65 };
+let game = { playing: false, stage: 1, unlocked: 1, score: 0, dist: 0, frame: 0, portal: -1 };
+let player = { x: 0, y: 0, v: 0, g: 0.5, j: -10, w: 80, h: 80 };
+let objects = { obs: [], gold: [], gems: [] };
 
-const audio = new (window.AudioContext || window.webkitAudioContext)();
 function sfx(f, t, d) {
-    if(audio.state === 'suspended') audio.resume();
+    const audio = new (window.AudioContext || window.webkitAudioContext)();
     let o = audio.createOscillator(), g = audio.createGain();
     o.type = t; o.frequency.setValueAtTime(f, audio.currentTime);
     g.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + d);
@@ -83,138 +72,130 @@ function sfx(f, t, d) {
 }
 
 function resize() {
-    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    cat.x = canvas.width * 0.15;
+    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+    player.x = cvs.width * 0.15;
 }
 window.onresize = resize; resize();
 
-function drawMenu() {
-    const grid = document.getElementById('grid'); grid.innerHTML = '';
+function buildMenu() {
+    const grid = document.getElementById('stage-grid'); grid.innerHTML = '';
     for(let i=1; i<=20; i++) {
-        const d = document.createElement('div');
-        let status = i <= state.unlocked ? 'unlocked' : 'locked';
-        d.className = `node ${status} ${i==state.stage?'active':''}`;
-        d.innerHTML = `مرحلة ${i}`;
-        if(status === 'unlocked') d.onclick = () => { state.stage = i; drawMenu(); sfx(400,'sine',0.1); };
-        grid.appendChild(d);
+        const b = document.createElement('div');
+        let status = i <= game.unlocked ? 'open' : 'locked';
+        b.className = `btn-stage ${status} ${i==game.stage?'active':''}`;
+        b.innerHTML = i <= game.unlocked ? `متجر ${i}` : `🔒`;
+        if(status === 'open') b.onclick = () => { game.stage = i; buildMenu(); sfx(400,'sine',0.1); };
+        grid.appendChild(b);
     }
 }
-drawMenu();
+buildMenu();
 
-function initGame() {
-    state.playing = true; state.dist = 0; state.health = 100; state.portal = -1;
-    entities = { obs: [], gold: [], gems: [], fx: [] };
-    cat.y = canvas.height/2; cat.v = 0;
-    document.getElementById('overlay').style.opacity = '0';
-    setTimeout(() => document.getElementById('overlay').style.display = 'none', 500);
-    sfx(150, 'square', 0.5);
-    render();
+function startGame() {
+    game.playing = true; game.dist = 0; game.frame = 0; game.portal = -1;
+    objects = { obs: [], gold: [], gems: [] };
+    player.y = cvs.height/2; player.v = 0;
+    document.getElementById('menu').style.display = 'none';
+    sfx(200, 'square', 0.4);
+    update();
 }
 
-function spawnFX(x, y, color) {
-    for(let i=0; i<10; i++) entities.fx.push({x, y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, a: 1, c: color});
+function drawPalace() {
+    // الأرضية والسقف (رخام)
+    ctx.fillStyle = '#0a0500'; ctx.fillRect(0,0,cvs.width, cvs.height);
+    
+    // أعمدة القصر والنوافذ
+    ctx.fillStyle = '#1a1105';
+    for(let i=0; i<6; i++) {
+        let xPos = (i * 300 - (game.dist % 300));
+        // النافذة
+        ctx.fillStyle = '#2d1a0a';
+        ctx.beginPath();
+        ctx.arc(xPos + 100, 200, 50, Math.PI, 0);
+        ctx.fillRect(xPos + 50, 200, 100, 150);
+        ctx.fill();
+        // العمود
+        ctx.fillStyle = '#3d2b1a';
+        ctx.fillRect(xPos, 0, 40, cvs.height);
+    }
 }
 
-function render() {
-    if(!state.playing) return;
-    state.frame++;
-    if(state.portal === -1) state.dist += 2;
+function update() {
+    if(!game.playing) return;
+    game.frame++;
+    if(game.portal === -1) game.dist += 2.5;
 
     let target = 3000;
-    let prog = Math.min(100, (state.dist / target) * 100);
-    document.getElementById('progress-bar').style.width = prog + '%';
-    document.getElementById('c-count').innerText = state.score;
-    document.getElementById('s-count').innerText = state.stage;
-    document.getElementById('h-count').innerText = state.health;
+    let progress = Math.min(100, (game.dist / target) * 100);
+    document.getElementById('prog-bar').style.width = progress + '%';
+    document.getElementById('coins').innerText = game.score;
+    document.getElementById('current-stage').innerText = game.stage;
 
-    // خلفية متدرجة ديناميكية
-    let grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    grd.addColorStop(0, '#050510'); grd.addColorStop(1, `hsla(${state.frame % 360}, 30%, 10%, 1)`);
-    ctx.fillStyle = grd; ctx.fillRect(0,0,canvas.width, canvas.height);
+    drawPalace();
 
-    // الدهليز المتموج (أكثر نعومة)
-    let wallH = (canvas.height * 0.18);
-    ctx.fillStyle = `hsla(${state.stage * 40}, 70%, 15%, 0.9)`;
-    for(let i=0; i<canvas.width; i+=4) {
-        let wave = Math.sin((i + state.frame * 5) * 0.01) * 25;
-        ctx.fillRect(i, 0, 5, wallH + wave);
-        ctx.fillRect(i, canvas.height - (wallH + wave), 5, wallH + wave);
-    }
+    // القطة (تواجه الكاميرا)
+    player.v += player.g; player.y += player.v;
+    ctx.drawImage(imgCat, player.x, player.y, player.w, player.h);
 
-    // القطة مع وهج
-    cat.v += cat.g; cat.y += cat.v;
-    ctx.save();
-    ctx.translate(cat.x + cat.w/2, cat.y + cat.h/2);
-    ctx.rotate(cat.v * 0.04);
-    ctx.shadowBlur = 20; ctx.shadowColor = varColor();
-    ctx.drawImage(imgs.cat, -cat.w/2, -cat.h/2, cat.w, cat.h);
-    ctx.restore();
-
-    // جزيئات الانفجار
-    entities.fx.forEach((f, i) => {
-        f.x += f.vx; f.y += f.vy; f.a -= 0.02;
-        ctx.fillStyle = `rgba(${f.c}, ${f.a})`;
-        ctx.fillRect(f.x, f.y, 4, 4);
-        if(f.a <= 0) entities.fx.splice(i, 1);
-    });
-
-    // الذهب (بدل اللون الأخضر)
-    if(state.frame % 80 == 0 && state.portal === -1) entities.gold.push({x: canvas.width, y: wallH + 100 + Math.random()*(canvas.height - wallH*2 - 200)});
-    entities.gold.forEach((g, i) => {
-        g.x -= 6; ctx.drawImage(imgs.coin, g.x, g.y, 35, 35);
-        if(Math.hypot(cat.x+35-g.x, cat.y+30-g.y) < 40) {
-            spawnFX(g.x, g.y, "255, 215, 0");
-            entities.gold.splice(i,1); state.score += 10; sfx(800, 'sine', 0.1);
+    // الذهب
+    if(game.frame % 80 == 0 && game.portal === -1) objects.gold.push({x: cvs.width, y: 150 + Math.random()*(cvs.height-300)});
+    objects.gold.forEach((g, i) => {
+        g.x -= 7; ctx.drawImage(imgGold, g.x, g.y, 40, 40);
+        if(Math.hypot(player.x + 40 - g.x, player.y + 40 - g.y) < 50) {
+            objects.gold.splice(i,1); game.score += 5; sfx(900, 'sine', 0.1);
         }
     });
 
-    // الوحوش
-    if(state.frame > 100 && state.frame % Math.max(25, 90 - state.stage*4) == 0 && state.portal === -1) {
-        entities.obs.push({x: canvas.width, y: wallH + 50 + Math.random()*(canvas.height - wallH*2 - 100), s: 70});
+    // الوحوش (وجوه مرعبة)
+    if(game.frame % Math.max(20, 80 - game.stage*3) == 0 && game.portal === -1) {
+        objects.obs.push({x: cvs.width, y: 100 + Math.random()*(cvs.height-200), s: 80});
     }
-    entities.obs.forEach((o, i) => {
-        o.x -= (7 + state.stage*0.5); 
-        ctx.drawImage(imgs.monster, o.x, o.y, o.s, o.s);
-        if(cat.x+20 < o.x+o.s-20 && cat.x+cat.w-20 > o.x+20 && cat.y+20 < o.y+o.s-20 && cat.y+cat.h-20 > o.y+20) {
-            state.health -= 20; spawnFX(cat.x, cat.y, "255, 0, 0");
-            entities.obs.splice(i, 1); sfx(100, 'sawtooth', 0.3);
-            if(state.health <= 0) gameOver(false);
+    objects.obs.forEach((o, i) => {
+        o.x -= (8 + game.stage*0.5);
+        ctx.drawImage(imgMonster, o.x, o.y, o.s, o.s);
+        // اصطدام قاتل
+        if(player.x+15 < o.x+o.s-15 && player.x+player.w-15 > o.x+15 && player.y+15 < o.y+o.s-15 && player.y+player.h-15 > o.y+15) {
+            die();
         }
     });
 
-    // بوابة الكهف السينمائية
-    if(prog >= 100 && state.portal === -1) state.portal = canvas.width;
-    if(state.portal > -1) {
-        state.portal -= 6;
-        ctx.fillStyle = '#000';
-        ctx.beginPath(); ctx.ellipse(state.portal, canvas.height/2, 100, 250, 0, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = varColor(); ctx.lineWidth = 10; ctx.stroke();
-        if(cat.x > state.portal - 50) gameOver(true);
+    // سقف وأرضية القصر
+    if(player.y < 50 || player.y > cvs.height - 130) die();
+
+    // البوابة الملكية
+    if(progress >= 100 && game.portal === -1) game.portal = cvs.width;
+    if(game.portal > -1) {
+        game.portal -= 6;
+        ctx.strokeStyle = varColor(); ctx.lineWidth = 15;
+        ctx.strokeRect(game.portal, 100, 80, cvs.height - 200);
+        if(player.x > game.portal) win();
     }
 
-    if(cat.y < wallH - 10 || cat.y > canvas.height - wallH - cat.h + 10) gameOver(false);
-    
-    requestAnimationFrame(render);
+    requestAnimationFrame(update);
 }
 
-function varColor() { return state.stage === 20 ? 'var(--neon-pink)' : 'var(--gold)'; }
+function varColor() { return game.stage === 20 ? '#ff00ea' : '#FFD700'; }
 
-function gameOver(win) {
-    state.playing = false;
-    sfx(win ? 1000 : 80, win ? 'square' : 'sawtooth', 0.5);
-    const title = document.getElementById('title');
-    if(win) {
-        if(state.stage === state.unlocked) state.unlocked++;
-        title.innerText = state.stage === 20 ? "🎉 حلم الهيمالايا تحقق!" : "✅ تم اجتياز الكهف!";
-    } else {
-        title.innerText = "💀 سقطت القطة!";
-    }
-    drawMenu();
-    document.getElementById('overlay').style.display = 'flex';
-    setTimeout(() => document.getElementById('overlay').style.opacity = '1', 10);
+function die() {
+    game.playing = false;
+    sfx(80, 'sawtooth', 0.5);
+    document.getElementById('m-title').innerText = "أمسك بك الحراس!";
+    document.getElementById('m-desc').innerText = "لقد فشلت في الهروب من القصر، حاول مجدداً.";
+    buildMenu();
+    document.getElementById('menu').style.display = 'flex';
 }
 
-const jump = (e) => { if(state.playing) { cat.v = cat.j; sfx(600, 'triangle', 0.08); } if(e) e.preventDefault(); };
+function win() {
+    game.playing = false;
+    sfx(1000, 'square', 0.5);
+    if(game.stage === game.unlocked) game.unlocked++;
+    document.getElementById('m-title').innerText = "هروب ناجح!";
+    document.getElementById('m-desc').innerText = `رائع! لقد اجتزت القصر الملكي ${game.stage}.`;
+    if(game.stage < 20) game.stage++;
+    buildMenu();
+    document.getElementById('menu').style.display = 'flex';
+}
+
+const jump = (e) => { if(game.playing) { player.v = player.j; sfx(600, 'triangle', 0.08); } if(e) e.preventDefault(); };
 window.onmousedown = jump; window.ontouchstart = jump;
 </script>
 </body>
