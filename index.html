@@ -3,195 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Himalaya: Grand Empires</title>
+    <title>Himalaya: Throne of Legends</title>
     <style>
-        :root { --gold: #FFD700; --blood: #660000; --shadow: #0a0a0a; }
+        :root { --gold: #FFD700; --neon-blue: #00f2ff; --blood: #ff0000; --dark: #050505; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
 
-        /* شاشة اختيار القصر والرهان */
-        #map-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; }
-        .map-container { width: 100%; max-width: 600px; text-align: center; }
+        /* الواجهة الرئيسية والأسواق */
+        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); color: white; }
+        .royal-card { background: linear-gradient(145deg, #111, #000); border: 2px solid var(--gold); border-radius: 30px; padding: 30px; width: 90%; max-width: 500px; text-align: center; box-shadow: 0 0 50px rgba(255,215,0,0.1); }
         
-        .palace-card { background: linear-gradient(145deg, #1a1a1a, #050505); border: 2px solid #333; border-radius: 20px; padding: 20px; margin-bottom: 20px; cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
-        .palace-card.unlocked { border-color: var(--gold); }
-        .palace-card.locked { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
-        .palace-card:active { transform: scale(0.98); }
+        .market-scroller { display: flex; gap: 15px; overflow-x: auto; padding: 15px 5px; scrollbar-width: none; }
+        .cat-item { min-width: 120px; background: #1a1a1a; padding: 15px; border-radius: 20px; border: 1px solid #333; transition: 0.3s; }
+        .cat-item.active { border-color: var(--gold); background: #222; transform: scale(1.05); }
+        .cat-item img { width: 60px; height: 60px; margin-bottom: 10px; }
         
-        .palace-title { font-size: 24px; color: var(--gold); margin: 0; }
-        .palace-bet { font-size: 14px; color: #aaa; margin: 5px 0; }
-        .palace-reward { font-size: 18px; color: #00ff00; font-weight: bold; }
+        .btn-play { background: var(--gold); color: #000; width: 100%; padding: 18px; border-radius: 50px; border: none; font-size: 24px; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        
+        /* HUD - واجهة اللعب */
+        #hud { position: fixed; top: 10px; width: 100%; padding: 10px 20px; z-index: 1000; display: flex; justify-content: space-between; color: white; font-weight: bold; text-shadow: 2px 2px 5px #000; }
+        .stat { background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; border: 1px solid var(--gold); }
 
-        #hud { position: fixed; top: 0; width: 100%; padding: 15px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
-        .stat-box { background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--gold); color: #fff; font-weight: bold; }
-
+        #flash { position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 2500; }
         canvas { display: block; }
-
-        /* تأثير الرعب عند الضرر */
-        #damage-tint { position: fixed; inset: 0; background: radial-gradient(circle, transparent 50%, var(--blood) 150%); pointer-events: none; opacity: 0; transition: 0.2s; z-index: 2000; }
     </style>
 </head>
 <body>
 
-<div id="damage-tint"></div>
+<div id="flash"></div>
 
-<div id="hud">
-    <div class="stat-box">💰 <span id="coins-display">500</span> كوينز</div>
-    <div class="stat-box">📍 <span id="level-name">قصر الغبار</span></div>
-    <div class="stat-box" style="border-color:red">❤️ <span id="lives-display">❤️❤️❤️</span></div>
+<div id="hud" style="display:none;">
+    <div class="stat">💰 $<span id="balance">500</span></div>
+    <div class="stat" style="border-color:red">❤️ <span id="lives">❤️❤️❤️</span></div>
+    <div class="stat">🏆 <span id="score">0</span></div>
 </div>
 
-<div id="map-overlay">
-    <div class="map-container">
-        <h1 style="color:var(--gold); text-shadow: 0 0 10px var(--gold);">اختر ساحة المعركة</h1>
-        <p style="color:#888;">الخسارة تعني فقدان الرهان.. الفوز يعني المجد!</p>
-        
-        <div class="palace-card unlocked" onclick="startLevel(1, 'قصر الغبار', 10, 50)">
-            <div class="palace-title">🏰 قصر الغبار (سهل)</div>
-            <div class="palace-bet">الرهان: 10 كوينز</div>
-            <div class="palace-reward">الجائزة: 50 كوينز</div>
+<div id="overlay">
+    <div class="royal-card">
+        <h1 style="color:var(--gold); margin:0;">قاعة أساطير الهيمالايا</h1>
+        <p style="color:#888;">اختر قطتك الملكية وراهن لتغزو العرش</p>
+
+        <div class="market-scroller">
+            <div class="cat-item active" onclick="selectCat(this, 1, 0)">
+                <img src="https://cdn-icons-png.flaticon.com/512/1864/1864514.png">
+                <div>العادي</div><small>3 أرواح | مجاني</small>
+            </div>
+            <div class="cat-item" onclick="selectCat(this, 2, 100)">
+                <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png">
+                <div>الذهبي</div><small>5 أرواح | 100$</small>
+            </div>
+            <div class="cat-item" onclick="selectCat(this, 3, 500)">
+                <img src="https://cdn-icons-png.flaticon.com/512/616/616430.png">
+                <div>الأسطوري</div><small>9 أرواح | 500$</small>
+            </div>
         </div>
 
-        <div class="palace-card unlocked" onclick="startLevel(2, 'سراديب الدم', 50, 250)">
-            <div class="palace-title" style="color:#ff3131;">🩸 سراديب الدم (متوسط)</div>
-            <div class="palace-bet">الرهان: 50 كوينز</div>
-            <div class="palace-reward">الجائزة: 250 كوينز</div>
+        <div style="background:rgba(255,215,0,0.1); padding:15px; border-radius:15px; margin-top:10px;">
+            <div id="palace-info"><b>قصر الغبار (المستوى 1)</b><br>رسوم الدخول: 10$ | الجائزة: 50$</div>
         </div>
 
-        <div class="palace-card locked" id="palace-3">
-            <div class="palace-title" style="color:#a864c8;">💀 عرش الشيطان (صعب جداً)</div>
-            <div class="palace-bet">الرهان: 200 كوينز</div>
-            <div class="palace-reward">الجائزة: 1200 كوينز</div>
-            <div style="font-size:10px;">يفتح بعد 10 انتصارات</div>
-        </div>
-
-        <div style="margin-top:20px; color:#555;">لديك قطة "الظل الأسود" مجهزة حالياً</div>
+        <button class="btn-play" onclick="startRoyalGame()">دخول القصر 🐾</button>
     </div>
 </div>
 
 <script>
-const cvs = document.createElement('canvas');
-const ctx = cvs.getContext('2d');
-document.body.appendChild(cvs);
+const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+document.body.appendChild(canvas);
 
-const imgs = {
-    cat: new Image(), mon: new Image(), coin: new Image()
-};
-imgs.cat.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png';
+// الأصول
+const imgs = { cat: new Image(), mon: new Image(), coin: new Image() };
+imgs.cat.src = 'https://cdn-icons-png.flaticon.com/512/616/616408.png';
 imgs.mon.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png';
 imgs.coin.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
 
-let game = { 
-    playing: false, 
-    coins: 500, 
-    lives: 3, 
-    dist: 0, 
-    target: 5000, 
-    difficulty: 1, 
-    frame: 0,
-    currentBet: 0,
-    currentPrize: 0
-};
-
-let player = { x: 0, y: 0, v: 0, g: 0.5, j: -10, w: 75, h: 70 };
-let ents = { obs: [], items: [] };
+let config = { balance: 1000, currentCat: 1, currentLives: 3, unlockedLevels: 1 };
+let game = { playing: false, score: 0, lives: 3, dist: 0, frame: 0, level: 1 };
+let player = { x: 0, y: 0, v: 0, g: 0.5, j: -10, w: 85, h: 80 };
+let world = { obs: [], items: [] };
 
 function resize() {
-    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
-    player.x = cvs.width * 0.15;
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    player.x = canvas.width * 0.15;
 }
 window.onresize = resize; resize();
 
-function startLevel(diff, name, bet, prize) {
-    if(game.coins < bet) return alert("رصيدك لا يكفي لهذا الرهان!");
-    
-    game.coins -= bet;
-    game.currentBet = bet;
-    game.currentPrize = prize;
-    game.difficulty = diff;
-    game.playing = true;
-    game.dist = 0;
-    game.lives = 3;
-    game.frame = 0;
-    ents = { obs: [], items: [] };
-    player.y = cvs.height/2;
-
-    document.getElementById('coins-display').innerText = game.coins;
-    document.getElementById('level-name').innerText = name;
-    document.getElementById('map-overlay').style.display = 'none';
-    
-    requestAnimationFrame(update);
+function selectCat(el, type, price) {
+    if(config.balance < price) return alert("رصيدك غير كافٍ!");
+    document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+    config.currentCat = type;
+    config.currentLives = type === 1 ? 3 : (type === 2 ? 5 : 9);
 }
 
-function update() {
+function startRoyalGame() {
+    let fee = 10 * game.level;
+    if(config.balance < fee) return alert("لا تملك رسوم الدخول!");
+    
+    config.balance -= fee;
+    game.playing = true; game.score = 0; game.dist = 0; game.frame = 0;
+    game.lives = config.currentLives;
+    world = { obs: [], items: [] };
+    player.y = canvas.height/2;
+
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('hud').style.display = 'flex';
+    updateHUD();
+    loop();
+}
+
+function updateHUD() {
+    document.getElementById('balance').innerText = config.balance;
+    document.getElementById('lives').innerText = "❤️".repeat(game.lives);
+    document.getElementById('score').innerText = game.score;
+}
+
+function loop() {
     if(!game.playing) return;
-    game.frame++;
-    game.dist += (3 + game.difficulty);
+    game.frame++; game.dist += (4 + game.level);
 
-    // مسح الشاشة بألوان القصر المحددة
-    ctx.fillStyle = game.difficulty === 1 ? '#0a0a0a' : (game.difficulty === 2 ? '#1a0000' : '#000');
-    ctx.fillRect(0, 0, cvs.width, cvs.height);
+    // رسم البيئة (القصر الملكي)
+    let grd = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width);
+    grd.addColorStop(0, '#1a0a00'); grd.addColorStop(1, '#000');
+    ctx.fillStyle = grd; ctx.fillRect(0,0,canvas.width, canvas.height);
 
-    // رسم ديكور القصر (نوافذ مرعبة)
-    ctx.fillStyle = 'rgba(255,255,255,0.03)';
-    for(let i=0; i<4; i++) {
-        let x = (i * 500) - (game.dist % 500);
-        ctx.fillRect(x + 100, 100, 150, 300);
+    // نوافذ مضيئة
+    ctx.fillStyle = 'rgba(255,215,0,0.05)';
+    for(let i=0; i<3; i++) {
+        let x = (i * 600) - (game.dist % 600);
+        ctx.fillRect(x + 200, 50, 100, 300);
     }
 
-    // القطة
+    // اللاعب (القطة)
     player.v += player.g; player.y += player.v;
+    ctx.save();
+    ctx.shadowBlur = 20; ctx.shadowColor = varColor();
     ctx.drawImage(imgs.cat, player.x, player.y, player.w, player.h);
+    ctx.restore();
 
-    // الوحوش (تزداد صعوبتها حسب القصر)
-    if(game.frame % Math.max(30, 80 - game.difficulty*20) === 0) {
-        ents.obs.push({
-            x: cvs.width, 
-            y: Math.random()*(cvs.height-100), 
-            s: 80 + (game.difficulty * 20),
-            sp: 6 + game.difficulty*2
-        });
+    // الوحوش المرعبة (الحراس)
+    if(game.frame % Math.max(25, 60 - game.level*5) == 0) {
+        world.obs.push({x: canvas.width, y: Math.random()*(canvas.height-150), s: 90, sp: 7 + game.level});
     }
-
-    ents.obs.forEach((o, i) => {
+    world.obs.forEach((o, i) => {
         o.x -= o.sp;
         ctx.drawImage(imgs.mon, o.x, o.y, o.s, o.s);
-        
-        // تصادم
-        if(player.x+15 < o.x+o.s-15 && player.x+player.w-15 > o.x+15 && player.y+15 < o.y+o.s-15 && player.y+player.h-15 > o.y+15) {
-            triggerDamage();
-            game.lives--;
-            ents.obs.splice(i, 1);
+        if(player.x+20 < o.x+o.s-20 && player.x+player.w-20 > o.x+20 && player.y+20 < o.y+o.s-20 && player.y+player.h-20 > o.y+20) {
+            game.lives--; flashEffect();
+            world.obs.splice(i, 1);
             if(game.lives <= 0) endGame(false);
+            updateHUD();
         }
     });
 
-    // سقف وأرضية
-    if(player.y < -50 || player.y > cvs.height) endGame(false);
+    // العملات
+    if(game.frame % 50 == 0) world.items.push({x: canvas.width, y: Math.random()*canvas.height});
+    world.items.forEach((c, i) => {
+        c.x -= 6;
+        ctx.drawImage(imgs.coin, c.x, c.y, 40, 40);
+        if(Math.hypot(player.x+40-c.x, player.y+40-c.y) < 50) {
+            game.score += 10; world.items.splice(i, 1); updateHUD();
+        }
+    });
 
-    // فوز
-    if(game.dist > game.target) endGame(true);
+    if(player.y < -100 || player.y > canvas.height + 100) endGame(false);
+    if(game.dist > 5000) endGame(true);
 
-    document.getElementById('lives-display').innerText = "❤️".repeat(game.lives);
-    requestAnimationFrame(update);
+    requestAnimationFrame(loop);
 }
 
-function triggerDamage() {
-    const tint = document.getElementById('damage-tint');
-    tint.style.opacity = 1;
-    setTimeout(() => tint.style.opacity = 0, 200);
+function flashEffect() {
+    const f = document.getElementById('flash');
+    f.style.opacity = 0.5;
+    setTimeout(() => f.style.opacity = 0, 100);
 }
+
+function varColor() { return config.currentCat === 3 ? '#a864c8' : '#FFD700'; }
 
 function endGame(win) {
     game.playing = false;
     if(win) {
-        game.coins += game.currentPrize;
-        alert(`🏆 انتصار ساحق! ربحت ${game.currentPrize} كوينز.`);
+        let winPrize = 50 * game.level;
+        config.balance += winPrize;
+        alert(`🌟 نصر ملكي! ربحت ${winPrize}$`);
+        game.level++;
     } else {
-        alert(`💀 سقطت في القصر! خسر رهانك (${game.currentBet} كوينز).`);
+        alert("💀 انتهت الرحلة في دهاليز القصر!");
     }
-    document.getElementById('coins-display').innerText = game.coins;
-    document.getElementById('map-overlay').style.display = 'flex';
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementById('hud').style.display = 'none';
+    updateHUD();
 }
 
 window.onmousedown = () => { if(game.playing) player.v = player.j; };
