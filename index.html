@@ -3,35 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Himalaya: The Great Dream</title>
+    <title>Himalaya: 20 Stages of Terror</title>
     <style>
         :root { --gold: #FFD700; --neon: #00f2ff; }
-        * { box-sizing: border-box; touch-action: none; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #050505; font-family: 'Segoe UI', sans-serif; }
+        * { box-sizing: border-box; touch-action: none; margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         
-        #hud { position: fixed; top: 15px; width: 100%; display: flex; justify-content: space-around; z-index: 1000; pointer-events: none; }
-        .stat-box { background: rgba(0,0,0,0.8); border: 1px solid var(--gold); color: white; padding: 8px 20px; border-radius: 50px; font-weight: bold; backdrop-filter: blur(5px); }
-        
-        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; transition: 0.5s; }
-        .royal-card { border: 2px solid var(--gold); padding: 50px; border-radius: 40px; text-align: center; color: white; background: radial-gradient(circle, #1a1a1a, #000); box-shadow: 0 0 50px rgba(255,215,0,0.2); }
-        .btn-play { background: var(--gold); color: black; border: none; padding: 15px 60px; font-size: 26px; font-weight: bold; border-radius: 50px; cursor: pointer; margin-top: 30px; box-shadow: 0 5px 20px rgba(255,215,0,0.4); }
+        /* واجهة HUD */
+        #hud { position: fixed; top: 15px; width: 100%; display: flex; justify-content: space-around; z-index: 1000; }
+        .badge { background: rgba(0,0,0,0.8); border: 2px solid var(--gold); color: #fff; padding: 10px 20px; border-radius: 50px; font-weight: bold; min-width: 100px; text-align: center; box-shadow: 0 0 15px rgba(255,215,0,0.3); }
 
-        canvas { display: block; filter: contrast(1.2) brightness(1.1); }
+        /* شاشات التوقف والفوز */
+        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .panel { border: 3px solid var(--gold); padding: 40px; border-radius: 40px; color: white; background: #111; max-width: 450px; width: 90%; }
+        .btn { background: var(--gold); color: #000; border: none; padding: 15px 50px; font-size: 22px; font-weight: bold; border-radius: 50px; cursor: pointer; margin-top: 25px; transition: 0.3s; }
+        .btn:hover { transform: scale(1.1); box-shadow: 0 0 30px var(--gold); }
+        
+        #progress { position: fixed; bottom: 0; left: 0; height: 6px; background: var(--gold); width: 0%; transition: 0.1s; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
 
+<div id="progress"></div>
 <div id="hud">
-    <div class="stat-box">💰 <span id="c-val">520</span></div>
-    <div class="stat-box">🔱 المرحلة <span id="s-val">1</span></div>
-    <div class="stat-box">❤️ <span id="l-val">❤️❤️❤️</span></div>
+    <div class="badge">💰 <span id="coin-val">520</span></div>
+    <div class="badge">🏰 <span id="stage-name">المرحلة 1</span></div>
+    <div class="badge">❤️ <span id="life-val">❤️❤️❤️</span></div>
 </div>
 
 <div id="overlay">
-    <div class="royal-card">
-        <h1 style="color:var(--gold); font-size: 40px;">حلم الإمبراطورية 🐾</h1>
-        <p>لا مبرمجين صغار هنا.. فقط كود يتحدى الخيال.</p>
-        <button class="btn-play" onclick="ignite()">ابدأ الملحمة 🔥</button>
+    <div class="panel">
+        <h1 id="m-title" style="color:var(--gold); font-size: 32px; margin-bottom: 10px;">إمبراطورية القطط 🐾</h1>
+        <p id="m-desc">هل أنت مستعد لمواجهة وحوش السرداب؟ <br> الرهان: 10 كوينز للدخول.</p>
+        <button class="btn" onclick="startAdventure()">دخول المعركة 🔥</button>
     </div>
 </div>
 
@@ -40,9 +45,9 @@ const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 document.body.appendChild(canvas);
 
-// --- محرك الصوت (الترددات الذهبية لماريو) ---
+// --- محرك الصوت (ماريو ستايل) ---
 const audio = new (window.AudioContext || window.webkitAudioContext)();
-function playSFX(f1, f2, d) {
+function playSound(f1, f2, d) {
     if(audio.state === 'suspended') audio.resume();
     const o = audio.createOscillator(); const g = audio.createGain();
     o.connect(g); g.connect(audio.destination);
@@ -52,37 +57,36 @@ function playSFX(f1, f2, d) {
     o.start(); o.stop(audio.currentTime + d);
 }
 
-// --- الرسومات البرمجية (Vector) لضمان عدم ظهور دراجات ---
-const draw = {
-    cat(x, y, s, rage) {
-        ctx.save();
-        if(rage) { ctx.shadowBlur = 20; ctx.shadowColor = "gold"; ctx.filter = "brightness(1.5)"; }
-        ctx.fillStyle = "#fff"; // جسم القطة
-        ctx.beginPath(); ctx.ellipse(x+s/2, y+s/2, s/2, s/3, 0, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x+s*0.8, y+s/3, s/4, 0, Math.PI*2); ctx.fill(); // رأس
-        ctx.fillStyle = "#000"; ctx.fillRect(x+s*0.85, y+s/4, 4, 4); // عين
-        ctx.restore();
-    },
-    monster(x, y, s, type) {
-        ctx.save();
-        ctx.fillStyle = type === 20 ? "#ff0000" : "#5500ff";
-        ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
-        // رسم وحش هندسي مخيف
-        ctx.beginPath();
-        for(let i=0; i<6; i++) {
-            let ang = (i/6) * Math.PI * 2 + Date.now()*0.005;
-            let r = s/2 + Math.sin(Date.now()*0.01)*10;
-            ctx.lineTo(x+s/2 + Math.cos(ang)*r, y+s/2 + Math.sin(ang)*r);
-        }
-        ctx.closePath(); ctx.fill();
-        ctx.fillStyle = "#fff"; ctx.fillRect(x+s/3, y+s/3, 8, 8); ctx.fillRect(x+s*0.6, y+s/3, 8, 8);
-        ctx.restore();
-    }
-};
+// --- رسم العناصر برمجياً (لضمان الدقة) ---
+function drawCat(x, y, s, rage) {
+    ctx.save();
+    if(rage > 0) { ctx.shadowBlur = 25; ctx.shadowColor = "gold"; ctx.filter = "brightness(1.5)"; }
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.ellipse(x+s/2, y+s/2, s/2, s/3, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+s*0.75, y+s/3, s/4, 0, Math.PI*2); ctx.fill(); // رأس
+    ctx.fillStyle = "#000"; ctx.fillRect(x+s*0.8, y+s/4, 4, 4); // عين
+    ctx.restore();
+}
 
-let game = { active: false, stage: 1, coins: 520, lives: 3, dist: 0, target: 4000 };
-let player = { x: 0, y: 0, v: 0, g: 0.48, j: -9.5, s: 75 };
-let entities = { monsters: [], coins: [], particles: [] };
+function drawMonster(x, y, s, world) {
+    const colors = ["#5500ff", "#00ff55", "#ff00ff", "#ff3300"];
+    ctx.fillStyle = colors[world] || "#ff0000";
+    ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
+    ctx.beginPath();
+    for(let i=0; i<8; i++) {
+        let ang = (i/8) * Math.PI*2 + Date.now()*0.005;
+        let r = s/2 + Math.sin(Date.now()*0.01)*5;
+        ctx.lineTo(x+s/2 + Math.cos(ang)*r, y+s/2 + Math.sin(ang)*r);
+    }
+    ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.fillRect(x+s/4, y+s/3, 6, 6); ctx.fillRect(x+s*0.6, y+s/3, 6, 6);
+}
+
+// --- إدارة اللعبة ---
+let state = { playing: false, stage: 1, coins: 520, lives: 3, dist: 0, target: 3000, rage: 0 };
+let player = { x: 0, y: 0, v: 0, g: 0.45, j: -9, s: 70 };
+let entities = { monsters: [], coins: [] };
+const worldNames = ["سرداب الغبار", "غابة الأرواح", "قصر المرايا", "عرش الجحيم"];
 
 function resize() {
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
@@ -90,76 +94,104 @@ function resize() {
 }
 window.onresize = resize; resize();
 
-function ignite() {
-    game.active = true; game.dist = 0; game.lives = 3;
-    entities = { monsters: [], coins: [], particles: [] };
+function startAdventure() {
+    if(state.coins < 10) return alert("الرصيد غير كافٍ!");
+    state.coins -= 10;
+    state.playing = true; state.dist = 0; state.lives = 3; state.rage = 0;
+    state.target = 3000 + (state.stage * 1000);
+    entities = { monsters: [], coins: [] };
     player.y = canvas.height/2;
-    document.getElementById('overlay').style.opacity = 0;
-    setTimeout(() => document.getElementById('overlay').style.display = 'none', 500);
-    loop();
+    document.getElementById('overlay').style.display = 'none';
+    updateUI();
+    gameLoop();
 }
 
-function loop() {
-    if(!game.active) return;
+function gameLoop() {
+    if(!state.playing) return;
     
-    // خلفية "العمق"
-    let grd = ctx.createLinearGradient(0,0,0,canvas.height);
-    grd.addColorStop(0, "#050510"); grd.addColorStop(1, "#100510");
-    ctx.fillStyle = grd; ctx.fillRect(0,0,canvas.width, canvas.height);
+    // خلفية متغيرة حسب العالم
+    let worldIdx = Math.min(3, Math.floor((state.stage-1)/5));
+    ctx.fillStyle = `hsl(${worldIdx * 80}, 20%, 5%)`;
+    ctx.fillRect(0,0,canvas.width, canvas.height);
 
-    // تحديث اللاعب
+    // حركة اللاعب
     player.v += player.g; player.y += player.v;
     if(player.y > canvas.height - player.s) player.y = canvas.height - player.s;
     if(player.y < 0) { player.y = 0; player.v = 0; }
     
-    draw.cat(player.x, player.y, player.s, (game.dist%100 < 20));
+    drawCat(player.x, player.y, player.s, state.rage);
+    if(state.rage > 0) state.rage--;
 
-    // الوحوش (بدون صور خارجية!)
-    if(Math.random() < 0.015 + (game.stage*0.002)) {
-        entities.monsters.push({ x: canvas.width, y: Math.random()*(canvas.height-80), s: 80+(game.stage*2), spd: 6+(game.stage*0.5) });
+    // توليد الوحوش (ذكاء متزايد)
+    if(Math.random() < 0.02 + (state.stage * 0.002)) {
+        entities.monsters.push({ x: canvas.width, y: Math.random()*(canvas.height-80), s: 70+(state.stage*2), spd: 6+(state.stage*0.4) });
     }
     entities.monsters.forEach((m, i) => {
         m.x -= m.spd;
-        draw.monster(m.x, m.y, m.s, game.stage);
-        if(Math.hypot(player.x+player.s/2 - (m.x+m.s/2), player.y+player.s/2 - (m.y+m.s/2)) < 60) {
-            game.lives--; entities.monsters.splice(i,1);
-            playSFX(100, 10, 0.3);
-            if(game.lives <= 0) resetGame();
+        // ذكاء الوحش بعد المرحلة 5
+        if(state.stage > 5 && m.x < canvas.width * 0.6) {
+            m.y += (player.y > m.y) ? 1.2 : -1.2;
+        }
+        drawMonster(m.x, m.y, m.s, worldIdx);
+        
+        // تصادم
+        if(Math.hypot(player.x+35 - (m.x+m.s/2), player.y+35 - (m.y+m.s/2)) < 55) {
+            if(state.rage > 0) {
+                entities.monsters.splice(i, 1);
+                state.coins += 20; playSound(400, 200, 0.1);
+            } else {
+                state.lives--; entities.monsters.splice(i, 1);
+                playSound(100, 10, 0.3);
+                if(state.lives <= 0) endGame(false);
+            }
+            updateUI();
         }
     });
 
-    // الذهب (صوت ماريو)
+    // الذهب
     if(Math.random() < 0.03) entities.coins.push({ x: canvas.width, y: Math.random()*(canvas.height-40) });
     entities.coins.forEach((c, i) => {
         c.x -= 5;
         ctx.fillStyle = "gold"; ctx.beginPath(); ctx.arc(c.x, c.y, 15, 0, Math.PI*2); ctx.fill();
-        if(Math.hypot(player.x+player.s/2 - c.x, player.y+player.s/2 - c.y) < 45) {
-            game.coins += 10; playSFX(987, 1318, 0.2); entities.coins.splice(i, 1);
+        if(Math.hypot(player.x+35 - c.x, player.y+35 - c.y) < 45) {
+            state.coins += 10; state.rage = 120; // وضع الغضب
+            playSound(987, 1318, 0.2); entities.coins.splice(i, 1);
+            updateUI();
         }
     });
 
-    game.dist += 5;
-    if(game.dist > game.target) { game.stage++; game.target += 2000; }
-    
-    updateHUD();
-    requestAnimationFrame(loop);
+    state.dist += (5 + state.stage*0.5);
+    document.getElementById('progress').style.width = (state.dist / state.target * 100) + "%";
+
+    if(state.dist >= state.target) endGame(true);
+    else requestAnimationFrame(gameLoop);
 }
 
-function updateHUD() {
-    document.getElementById('c-val').innerText = game.coins;
-    document.getElementById('s-val').innerText = game.stage;
-    document.getElementById('l-val').innerText = "❤️".repeat(game.lives);
+function updateUI() {
+    document.getElementById('coin-val').innerText = state.coins;
+    document.getElementById('life-val').innerText = "❤️".repeat(state.lives);
+    document.getElementById('stage-name').innerText = worldNames[Math.min(3, Math.floor((state.stage-1)/5))] + " - مرحلة " + state.stage;
 }
 
-function resetGame() {
-    game.active = false;
+function endGame(win) {
+    state.playing = false;
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementById('overlay').style.opacity = 1;
-    document.querySelector('h1').innerText = "عد من جديد يا ملك 🔱";
+    const t = document.getElementById('m-title');
+    const d = document.getElementById('m-desc');
+    
+    if(win) {
+        t.innerText = `النصر في المرحلة ${state.stage}! 🎉`;
+        state.stage++;
+        d.innerText = "لقد أثبتّ جدارتك.. هل أنت مستعد للمرحلة التالية؟";
+        if(state.stage > 20) t.innerText = "أنت إمبراطور الهيمالايا! 👑";
+    } else {
+        t.innerText = "سحقتك الوحوش! 💀";
+        d.innerText = "خسرت رهانك.. حاول استعادة شرفك مجدداً.";
+    }
 }
 
-window.onmousedown = () => { if(game.active) { player.v = player.j; playSFX(200, 600, 0.1); } };
-window.ontouchstart = (e) => { e.preventDefault(); if(game.active) { player.v = player.j; playSFX(200, 600, 0.1); } };
+window.onmousedown = () => { if(state.playing) { player.v = player.j; playSound(200, 600, 0.1); } };
+window.ontouchstart = (e) => { e.preventDefault(); if(state.playing) { player.v = player.j; playSound(200, 600, 0.1); } };
 </script>
 </body>
 </html>
